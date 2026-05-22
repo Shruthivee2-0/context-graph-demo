@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Context Graph: Scroll-Driven Morph</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#ffffff;
+    --canvas-bg:#ffffff;
+    --grid:rgba(17,17,17,0.04);
+    --edge:#e4e4e8;
+    --border:#e4e4e8;
+    --text-1:#111;
+    --text-2:#555;
+    --text-3:#999;
+    --text-4:#cccccc;
+  }
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;background:#f7f7f9;color:var(--text-1)}
+  .page{max-width:760px;margin:40px auto;padding:0 16px}
+
+  #world{
+    width:100%;height:540px;overflow-y:scroll;overflow-x:hidden;
+    position:relative;border-radius:12px;border:1px solid var(--border);
+    background:var(--canvas-bg);
+    box-shadow:0 8px 32px rgba(17,17,17,0.06);
+  }
+  #track{height:12000px;position:relative}
+  #sticky{position:sticky;top:0;height:540px;overflow:hidden;background:var(--canvas-bg)}
+  canvas{display:block;width:100%;height:540px}
+  #ui{position:absolute;top:14px;left:0;right:0;text-align:center;pointer-events:none}
+  #ui h3{font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:2px;letter-spacing:-0.01em}
+  #dots{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
+  .dot{width:6px;height:6px;border-radius:50%;background:#e4e4e8;border:none;cursor:pointer;padding:0;transition:background .25s,transform .25s}
+  .dot.on{background:#5B6EEA;transform:scale(1.35)}
+  #hint{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--text-4);white-space:nowrap;transition:opacity .4s;letter-spacing:.01em}
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="world">
+    <div id="track">
+      <div id="sticky">
+        <canvas id="c"></canvas>
+        <div id="ui"><h3 id="ttl">Basic local app</h3></div>
+        <div id="dots"></div>
+        <div id="hint">scroll to build ↓</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let CW, CH;
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const world=document.getElementById('world');
+const DPR=window.devicePixelRatio||1;
+function setCanvasSize(){
+  CW=canvas.clientWidth||680;
+  CH=canvas.clientHeight||540;
+  canvas.width=Math.round(CW*DPR);
+  canvas.height=Math.round(CH*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+setCanvasSize();
+
+function pal(){
+  return{
+    bg:'#ffffff',
+    dot:'rgba(17,17,17,0.05)',
+    edge:'#e4e4e8',
+    lbl:'#555',
+    cols:{
+      purple:{f:'#eeedfe',s:'#534ab7'},
+      teal:  {f:'#e1f5ee',s:'#0f6e56'},
+      coral: {f:'#faece7',s:'#c87a48'},
+      blue:  {f:'#e6f1fb',s:'#5B8EEA'},
+      amber: {f:'#faeeda',s:'#b88227'},
+      pink:  {f:'#fbeaf0',s:'#D47FAE'},
+      gray:  {f:'#f5f5f7',s:'#888'},
+      green: {f:'#eaf3de',s:'#4CAF82'},
+    }
+  };
+}
+
+function lerp(a,b,t){return a+(b-a)*t}
+function eio(t){return t<.5?2*t*t:-1+(4-2*t)*t}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+function ringPts(n,R,off){
+  off=off||0;
+  return Array.from({length:n},(_,i)=>{
+    const a=(i/n)*Math.PI*2-Math.PI/2+off;
+    return{x:(CW/2+Math.cos(a)*R)/CW, y:(CH/2+Math.sin(a)*R)/CH};
+  });
+}
+
+function buildGalaxy(){
+  const r1=58,r2=115,r3=172;
+  const i9=ringPts(9,r1), m15=ringPts(15,r2,Math.PI/15), o19=ringPts(19,r3,Math.PI/19);
+  const nodes=[
+    {lbl:'Service', c:'purple',r:16,x:.5,y:.5,center:true},
+    {lbl:'App A',   c:'purple',r:10,...i9[0]},{lbl:'App B',c:'purple',r:10,...i9[1]},{lbl:'App C',c:'purple',r:9,...i9[2]},
+    {lbl:'API 1',   c:'teal',  r:9, ...i9[3]},{lbl:'API 2',c:'teal',r:9,...i9[4]},{lbl:'API 3',c:'teal',r:8,...i9[5]},
+    {lbl:'API 4',   c:'teal',  r:8, ...i9[6]},{lbl:'Server',c:'coral',r:9,...i9[7]},{lbl:'Gateway',c:'coral',r:8,...i9[8]},
+    {lbl:'Auth',    c:'blue',  r:8, ...m15[0]},{lbl:'DB',c:'blue',r:8,...m15[1]},{lbl:'Queue',c:'blue',r:7,...m15[2]},
+    {lbl:'Cache',   c:'blue',  r:7, ...m15[3]},{lbl:'Storage',c:'blue',r:7,...m15[4]},{lbl:'Logs',c:'coral',r:7,...m15[5]},
+    {lbl:'CDN',     c:'coral', r:7, ...m15[6]},{lbl:'ML',c:'coral',r:7,...m15[7]},{lbl:'Search',c:'amber',r:7,...m15[8]},
+    {lbl:'Email',   c:'amber', r:7, ...m15[9]},{lbl:'Metrics',c:'pink',r:7,...m15[10]},{lbl:'Secrets',c:'pink',r:7,...m15[11]},
+    {lbl:'Elastic', c:'amber', r:6, ...m15[12]},{lbl:'Datadog',c:'amber',r:6,...m15[13]},{lbl:'Vault',c:'pink',r:6,...m15[14]},
+    {lbl:'OAuth',   c:'blue',  r:6, ...o19[0]},{lbl:'LDAP',c:'blue',r:6,...o19[1]},{lbl:'Postgres',c:'blue',r:6,...o19[2]},
+    {lbl:'Redis',   c:'blue',  r:6, ...o19[3]},{lbl:'Kafka',c:'coral',r:6,...o19[4]},{lbl:'S3',c:'blue',r:6,...o19[5]},
+    {lbl:'Lambda',  c:'teal',  r:6, ...o19[6]},{lbl:'GraphQL',c:'teal',r:6,...o19[7]},{lbl:'gRPC',c:'green',r:6,...o19[8]},
+    {lbl:'Webhooks',c:'coral', r:6, ...o19[9]},{lbl:'OpenAI',c:'purple',r:7,...o19[10]},{lbl:'Pubsub',c:'teal',r:6,...o19[11]},
+    {lbl:'Traefik', c:'gray',  r:5, ...o19[12]},{lbl:'K8s',c:'blue',r:6,...o19[13]},{lbl:'Consul',c:'green',r:5,...o19[14]},
+    {lbl:'Jaeger',  c:'amber', r:5, ...o19[15]},{lbl:'Envoy',c:'gray',r:5,...o19[16]},{lbl:'Zipkin',c:'pink',r:5,...o19[17]},
+    {lbl:'NATS',    c:'teal',  r:5, ...o19[18]},
+  ];
+  const N=nodes.length, edges=[];
+  for(let i=1;i<N;i++) edges.push([0,i]);
+  for(let i=1;i<=9;i++) edges.push([i,(i%9)+1]);
+  for(let i=10;i<25;i++) edges.push([i,10+(i-10+1)%15]);
+  for(let i=25;i<N;i++) edges.push([i,25+(i-25+1)%(N-25)]);
+  [[1,10],[2,11],[3,12],[4,13],[5,14],[6,15],[7,16],[8,17],[9,10],
+   [10,25],[11,26],[12,27],[13,28],[14,29],[15,30],[16,31],[17,32]
+  ].forEach(e=>{if(e[0]<N&&e[1]<N)edges.push(e);});
+  return{nodes,edges};
+}
+const G=buildGalaxy();
+
+const STAGES=[
+  {ttl:'Basic local app',
+   nodes:[{x:.5,y:.5,r:20,c:'purple',lbl:'App',center:true}],edges:[]},
+  {ttl:'App + API + server',
+   nodes:[{x:.5,y:.5,r:14,c:'purple',lbl:'App'},{x:.63,y:.36,r:11,c:'teal',lbl:'API'},{x:.63,y:.64,r:11,c:'coral',lbl:'Server'}],
+   edges:[[0,1],[0,2],[1,2]]},
+  {ttl:'App + API + multiple services',
+   nodes:[
+    {x:.44,y:.5,r:13,c:'purple',lbl:'App'},{x:.55,y:.37,r:10,c:'teal',lbl:'API'},{x:.55,y:.63,r:10,c:'coral',lbl:'Server'},
+    {x:.68,y:.27,r:8,c:'blue',lbl:'Auth'},{x:.69,y:.5,r:8,c:'blue',lbl:'DB'},{x:.68,y:.73,r:8,c:'blue',lbl:'Cache'}],
+   edges:[[0,1],[0,2],[1,2],[1,3],[1,4],[2,4],[2,5]]},
+  {ttl:'App + multiple APIs + multiple services',
+   nodes:[
+    {x:.4,y:.5,r:13,c:'purple',lbl:'App'},
+    {x:.52,y:.27,r:9,c:'teal',lbl:'API 1'},{x:.53,y:.5,r:9,c:'teal',lbl:'API 2'},{x:.52,y:.73,r:9,c:'teal',lbl:'API 3'},
+    {x:.68,y:.2,r:8,c:'blue',lbl:'Auth'},{x:.69,y:.38,r:8,c:'blue',lbl:'DB'},{x:.69,y:.62,r:8,c:'blue',lbl:'Queue'},{x:.68,y:.8,r:8,c:'blue',lbl:'Cache'}],
+   edges:[[0,1],[0,2],[0,3],[1,4],[1,5],[2,5],[2,6],[3,6],[3,7],[4,5],[6,7]]},
+  {ttl:'Multiple apps + multiple APIs + multiple services',
+   nodes:[
+    {x:.16,y:.35,r:10,c:'purple',lbl:'App A'},{x:.16,y:.65,r:10,c:'purple',lbl:'App B'},{x:.16,y:.2,r:10,c:'purple',lbl:'App C'},
+    {x:.35,y:.27,r:9,c:'teal',lbl:'API 1'},{x:.35,y:.5,r:9,c:'teal',lbl:'API 2'},{x:.35,y:.73,r:9,c:'teal',lbl:'API 3'},
+    {x:.53,y:.18,r:7,c:'blue',lbl:'Auth'},{x:.54,y:.37,r:7,c:'blue',lbl:'DB'},{x:.54,y:.57,r:7,c:'blue',lbl:'Queue'},{x:.53,y:.76,r:7,c:'blue',lbl:'Cache'},
+    {x:.72,y:.28,r:7,c:'coral',lbl:'Logs'},{x:.72,y:.5,r:7,c:'coral',lbl:'CDN'},{x:.72,y:.72,r:7,c:'coral',lbl:'ML'}],
+   edges:[[0,3],[0,4],[1,4],[1,5],[2,3],[2,4],[3,6],[3,7],[4,7],[4,8],[5,8],[5,9],[6,10],[7,10],[7,11],[8,11],[8,12],[9,12],[3,4],[4,5],[7,8],[10,11]]},
+  {ttl:'The context graph',
+   nodes:G.nodes,edges:G.edges,isGraph:true},
+];
+
+const NS=STAGES.length;
+const dotsEl=document.getElementById('dots');
+STAGES.forEach((_,i)=>{
+  const b=document.createElement('button');
+  b.className='dot'+(i===0?' on':'');
+  b.id='d'+i; b.setAttribute('aria-label','Stage '+(i+1));
+  b.onclick=()=>world.scrollTo({top:i*(12000/NS)+10,behavior:'smooth'});
+  dotsEl.appendChild(b);
+});
+
+let prevS=0, nextS=0, tval=1, pulse=0;
+const unlocked=new Array(NS).fill(false);
+unlocked[0]=true;
+
+function iNodes(n1,n2,t){
+  const max=Math.max(n1.length,n2.length);
+  return Array.from({length:max},(_,i)=>{
+    const hasA=!!n1[i], hasB=!!n2[i];
+    const a=hasA?n1[i]:{...n2[i],r:0,x:.5,y:.5};
+    const b=hasB?n2[i]:{...n1[i],r:0};
+    return{x:lerp(a.x,b.x,t),y:lerp(a.y,b.y,t),r:lerp(a.r,b.r,t),c:b.c||a.c,lbl:b.lbl!==undefined?b.lbl:a.lbl,center:b.center,stable:hasA&&hasB};
+  });
+}
+
+function draw(){
+  const p=pal();
+  ctx.clearRect(0,0,CW,CH);
+  ctx.fillStyle=p.bg; ctx.fillRect(0,0,CW,CH);
+
+  ctx.fillStyle=p.dot;
+  for(let x=12;x<CW;x+=24)
+    for(let y=12;y<CH;y+=24){ctx.beginPath();ctx.arc(x,y,0.9,0,Math.PI*2);ctx.fill();}
+
+  const e=eio(clamp(tval,0,1));
+  const settled=tval>=.99;
+  const sA=STAGES[prevS], sB=STAGES[nextS];
+
+  if(settled) unlocked[nextS]=true;
+
+  const showLbl=unlocked[nextS]&&settled || (unlocked[prevS]&&!settled);
+
+  const nodes=settled?sB.nodes:iNodes(sA.nodes,sB.nodes,e);
+  const edges=(e<.5?sA:sB).edges;
+  const isG=sB.isGraph&&settled;
+
+  ctx.strokeStyle=p.edge; ctx.lineWidth=.8;
+  edges.forEach(([a,b])=>{
+    const na=nodes[a],nb=nodes[b];
+    if(!na||!nb)return;
+    ctx.beginPath();ctx.moveTo(na.x*CW,na.y*CH);ctx.lineTo(nb.x*CW,nb.y*CH);ctx.stroke();
+  });
+
+  const displayNodes=settled?sB.nodes:nodes;
+  displayNodes.forEach(n=>{
+    const x=n.x*CW, y=n.y*CH;
+    const col=p.cols[n.c]||p.cols.gray;
+    if(n.center&&isG){
+      // Soft halo in node's own color — ambient, not interactive
+      const ps=.5+.5*Math.sin(pulse*.035);
+      ctx.save();
+      ctx.globalAlpha=.18+.06*ps;
+      ctx.beginPath();ctx.arc(x,y,n.r+7+3*ps,0,Math.PI*2);
+      ctx.fillStyle=col.f;ctx.fill();
+      ctx.restore();
+    }
+    ctx.beginPath();ctx.arc(x,y,Math.max(.5,n.r),0,Math.PI*2);
+    ctx.fillStyle=col.f;ctx.fill();
+    ctx.strokeStyle=col.s;ctx.lineWidth=n.center?1.6:.9;ctx.stroke();
+    if(n.lbl&&showLbl&&n.r>=6&&(settled||n.stable!==false)){
+      const fs=n.center?11:9.5;
+      ctx.font=`${n.center?'600':'500'} ${fs}px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='top';
+      ctx.fillStyle=n.center?'#111':p.lbl;
+      ctx.fillText(n.lbl,x,y+n.r+3);
+    }
+  });
+}
+
+function tick(){pulse++;draw();requestAnimationFrame(tick);}
+tick();
+
+let lastStage=-1;
+function onScroll(){
+  const sy=world.scrollTop;
+  const maxS=12000-540;
+  const prog=clamp(sy/maxS,0,1);
+  const raw=prog*(NS-1);
+  const si=Math.min(Math.floor(raw),NS-2);
+  const sf=raw-si;
+  if(si!==prevS){prevS=si;nextS=Math.min(si+1,NS-1);}
+  tval=sf;
+  const active=sf>.5?nextS:prevS;
+  if(active!==lastStage){
+    lastStage=active;
+    document.getElementById('ttl').textContent=STAGES[active].ttl;
+    STAGES.forEach((_,i)=>document.getElementById('d'+i).classList.toggle('on',i===active));
+  }
+  document.getElementById('hint').style.opacity=sy>80?'0':'1';
+}
+world.addEventListener('scroll',onScroll,{passive:true});
+onScroll();
+
+window.addEventListener('resize',()=>{
+  setCanvasSize();
+  const G2=buildGalaxy();
+  STAGES[5].nodes=G2.nodes;
+  STAGES[5].edges=G2.edges;
+});
+</script>
+</body>
+</html>
