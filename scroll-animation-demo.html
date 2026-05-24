@@ -18,7 +18,7 @@
     --text-4:#cccccc;
   }
   html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;background:#f7f7f9;color:var(--text-1)}
-  .page{max-width:1040px;margin:40px auto;padding:0 16px}
+  .page{max-width:1320px;margin:40px auto;padding:0 16px}
 
   .demo-layout{
     display:flex;
@@ -26,23 +26,34 @@
     justify-content:center;
     gap:0;
   }
-  .nd-col{
+  .nd-col, .sources-col{
     width:0;
     flex-shrink:0;
     overflow:hidden;
-    margin-right:0;
-    transition:width .4s cubic-bezier(.4,0,.2,1), margin-right .4s cubic-bezier(.4,0,.2,1);
+    transition:width .4s cubic-bezier(.4,0,.2,1), margin .4s cubic-bezier(.4,0,.2,1);
   }
+  .nd-col{margin-right:0}
+  .sources-col{margin-left:0}
   .demo-layout.locked .nd-col{
     width:270px;
     margin-right:20px;
   }
+  .demo-layout.locked .sources-col{
+    width:280px;
+    margin-left:20px;
+  }
   #nd{width:270px}
-  @media (max-width: 880px){
+  #rp{width:280px}
+  @media (max-width: 1280px){
+    .demo-layout.locked .sources-col{width:260px}
+    #rp{width:260px}
+  }
+  @media (max-width: 1100px){
     .demo-layout{flex-direction:column;align-items:center;gap:0}
-    .nd-col{width:100%;max-width:680px;margin-right:0;height:0;transition:height .4s ease,margin-bottom .4s ease}
-    .demo-layout.locked .nd-col{width:100%;height:auto;margin-right:0;margin-bottom:20px}
-    #nd{width:100%}
+    .nd-col,.sources-col{width:100%;max-width:680px;margin:0;height:0;transition:height .4s ease,margin .4s ease}
+    .demo-layout.locked .nd-col{width:100%;height:auto;margin:0 0 20px 0}
+    .demo-layout.locked .sources-col{width:100%;height:auto;margin:20px 0 0 0}
+    #nd,#rp{width:100%}
   }
 
   #world{
@@ -105,6 +116,40 @@
   /* click hint shown on final stage */
   #click-hint{position:absolute;top:60px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--color-text-tertiary);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
   #click-hint.show{opacity:1}
+
+  /* ── RIGHT SOURCES PANEL ── */
+  #rp{
+    background:#fff;border:1px solid #e4e4e8;border-radius:12px;
+    box-shadow:0 8px 32px rgba(17,17,17,0.06);
+    overflow:hidden;max-height:540px;overflow-y:auto;
+    font-family:inherit;color:#111;
+    animation:rp-in .15s ease;
+  }
+  @keyframes rp-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+  .rp-tabs{display:flex;border-bottom:1px solid #e8e8ec;padding:0 12px}
+  .rp-tab{flex:0 0 auto;padding:12px 12px;background:none;border:none;font-size:12.5px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;transition:color .15s}
+  .rp-tab.active{color:#5B6EEA;border-bottom-color:#5B6EEA;font-weight:600}
+  .rp-body{padding:14px}
+  .rp-section{font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:#bbb;margin:14px 0 8px;font-weight:600}
+  .rp-section:first-child{margin-top:0}
+  .rp-card{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid #e4e4e8;border-radius:10px;margin-bottom:6px}
+  .rp-card.connected{border-color:#c7ebd1;background:#f3faf6}
+  .rp-logo{width:32px;height:32px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff}
+  .rp-logo svg{width:18px;height:18px}
+  .rp-meta{flex:1;min-width:0}
+  .rp-name{font-size:13px;font-weight:600;color:#111;margin-bottom:2px}
+  .rp-desc{font-size:11px;color:#888;line-height:1.35}
+  .rp-status{font-size:11px;color:#3b8c5e;font-weight:500;flex-shrink:0;white-space:nowrap}
+  .rp-status svg{vertical-align:-2px;margin-right:2px}
+  .rp-btn{font-size:11.5px;font-weight:500;color:#5B6EEA;background:#f0f2ff;border:none;padding:5px 11px;border-radius:6px;cursor:pointer;flex-shrink:0;font-family:inherit;white-space:nowrap}
+  .rp-btn:hover{background:#e6e9ff}
+  .rp-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f4f4f7}
+  .rp-row:last-child{border-bottom:none}
+  .rp-row-icon{width:22px;height:22px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .rp-row-text{flex:1;font-size:11.5px;color:#888;line-height:1.4}
+  .rp-row-text strong{color:#111;font-weight:600}
+  .rp-row-btn{font-size:11.5px;color:#5B6EEA;background:none;border:none;cursor:pointer;padding:2px 6px;font-family:inherit;font-weight:500;flex-shrink:0}
+  .rp-row-btn:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -151,6 +196,77 @@
         </div>
       </div>
     </div>
+    <aside class="sources-col">
+      <div id="rp">
+        <div class="rp-tabs">
+          <button class="rp-tab active">Sources</button>
+          <button class="rp-tab">Insights</button>
+        </div>
+        <div class="rp-body">
+          <div class="rp-section">Connected</div>
+          <div class="rp-card connected">
+            <div class="rp-logo" style="background:#1a1a1a">
+              <svg viewBox="0 0 16 16" fill="#fff"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            </div>
+            <div class="rp-meta">
+              <div class="rp-name">GitHub</div>
+              <div class="rp-desc">1,247 nodes added to graph</div>
+            </div>
+            <div class="rp-status">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#3b8c5e" stroke-width="2.5" stroke-linecap="round"><path d="M3 8l4 4 6-7"/></svg>
+              Connected
+            </div>
+          </div>
+          <div class="rp-card connected">
+            <div class="rp-logo" style="background:#3970e4">
+              <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 1.5L4 5.7v8.6L12 18.5l8-4.2V5.7L12 1.5zm0 2.2l5.9 3.1L12 9.9 6.1 6.8 12 3.7zM5 8.6l6 3.2v7l-6-3.2v-7zm14 0v7l-6 3.2v-7l6-3.2z"/></svg>
+            </div>
+            <div class="rp-meta">
+              <div class="rp-name">Kubernetes</div>
+              <div class="rp-desc">50 nodes added to graph</div>
+            </div>
+            <div class="rp-status">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#3b8c5e" stroke-width="2.5" stroke-linecap="round"><path d="M3 8l4 4 6-7"/></svg>
+              Connected
+            </div>
+          </div>
+
+          <div class="rp-section">Add more context</div>
+          <div class="rp-card">
+            <div class="rp-logo" style="background:#0052cc">
+              <svg viewBox="0 0 24 24" fill="#fff"><path d="M11.5 2.5L2.5 11.5l9 9 4.5-4.5-4.5-4.5L16 7l-4.5-4.5zm10 10L17 17l4.5 4.5 4.5-4.5h-4.5z" opacity=".4"/><path d="M11.5 2.5L2.5 11.5l4.5 4.5L11.5 11.5l4.5-4.5z"/></svg>
+            </div>
+            <div class="rp-meta">
+              <div class="rp-name">Jira</div>
+              <div class="rp-desc">Teams, owners &amp; maturity phases</div>
+            </div>
+            <button class="rp-btn">+ Connect</button>
+          </div>
+
+          <div class="rp-section">Enrich further</div>
+          <div class="rp-row">
+            <div class="rp-row-icon" style="background:#008c99"></div>
+            <div class="rp-row-text"><strong>New Relic</strong> — Telemetry nodes to <strong>89 services</strong></div>
+            <button class="rp-row-btn">+ Add</button>
+          </div>
+          <div class="rp-row">
+            <div class="rp-row-icon" style="background:#6e4ed1"></div>
+            <div class="rp-row-text"><strong>Wiz</strong> — Security scans across <strong>115 services</strong></div>
+            <button class="rp-row-btn">+ Add</button>
+          </div>
+          <div class="rp-row">
+            <div class="rp-row-icon" style="background:#632ca6"></div>
+            <div class="rp-row-text"><strong>Datadog</strong> — Monitoring metrics to <strong>89 services</strong></div>
+            <button class="rp-row-btn">+ Add</button>
+          </div>
+          <div class="rp-row">
+            <div class="rp-row-icon" style="background:#06ac38"></div>
+            <div class="rp-row-text"><strong>PagerDuty</strong> — On-call rotations for <strong>16 teams</strong></div>
+            <button class="rp-row-btn">+ Add</button>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
 </div>
 
