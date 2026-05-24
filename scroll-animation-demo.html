@@ -272,7 +272,7 @@ STAGES.forEach((_,i)=>{
 });
 
 let prevS=0, nextS=0, tval=1, pulse=0;
-let hasClickedNode=false, clickFrame=0;
+let hasClickedNode=false, clickFrame=0, hasAutoOpened=false;
 const unlocked=new Array(NS).fill(false);
 unlocked[0]=true;
 
@@ -375,6 +375,22 @@ function onScroll(){
     STAGES.forEach((_,i)=>document.getElementById('d'+i).classList.toggle('on',i===active));
   }
   document.getElementById('hint').style.opacity=sy>80?'0':'1';
+
+  // Auto-open detail panel when reaching the end of the animation
+  const atEnd = nextS === NS-1 && tval >= 0.99;
+  if (!atEnd) hasAutoOpened = false;
+  if (atEnd && !hasAutoOpened && typeof openDetail === 'function') {
+    const ndEl = document.getElementById('nd');
+    if (ndEl && !ndEl.classList.contains('open')) {
+      hasAutoOpened = true;
+      openDetail(0);
+      hasClickedNode = true;
+      clickFrame = pulse;
+      world.scrollTop = 12000 - 540;
+      document.querySelector('.demo-layout').classList.add('locked');
+      world.style.overflowY = 'hidden';
+    }
+  }
 }
 world.addEventListener('scroll',onScroll,{passive:true});
 onScroll();
