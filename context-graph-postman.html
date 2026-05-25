@@ -324,114 +324,72 @@ function ringPts(n,R,off){
   });
 }
 
-// ── Postman context graph: real services with team-coloured nodes,
-// endpoint satellites, deployment clusters, force-directed layout.
-const CG_SERVICES=[
-  {name:'api-catalog-service', team:'catalog',  r:17, endpoints:5},
-  {name:'payment-service',     team:'payments', r:14, endpoints:3},
-  {name:'auth-service',        team:'platform', r:16, endpoints:5},
-  {name:'bifrost-gateway',     team:'platform', r:20, endpoints:0},
-  {name:'user-service',        team:'platform', r:15, endpoints:4},
-  {name:'workspace-service',   team:'core',     r:21, endpoints:6},
-  {name:'collection-service',  team:'core',     r:16, endpoints:5},
-  {name:'monitor-service',     team:'testing',  r:18, endpoints:4},
-  {name:'flows-service',       team:'flows',    r:13, endpoints:4},
-  {name:'insights-service',    team:'data',     r:12, endpoints:3},
-];
-const CG_DEPS=[
-  ['payment-service','auth-service'],['payment-service','user-service'],
-  ['workspace-service','auth-service'],['workspace-service','user-service'],
-  ['workspace-service','api-catalog-service'],
-  ['collection-service','workspace-service'],['collection-service','auth-service'],
-  ['monitor-service','collection-service'],['monitor-service','workspace-service'],
-  ['flows-service','collection-service'],['flows-service','auth-service'],
-  ['insights-service','monitor-service'],['insights-service','workspace-service'],
-  ['api-catalog-service','auth-service'],['api-catalog-service','user-service'],
-  ['bifrost-gateway','api-catalog-service'],['bifrost-gateway','payment-service'],
-  ['bifrost-gateway','workspace-service'],
-];
-const CG_CLUSTERS=['prod-us','prod-eu','staging'];
-
-function runForceLayout(nodes, edges, iters){
-  nodes.forEach(n=>{n.vx=0;n.vy=0});
-  for(let step=0;step<iters;step++){
-    for(let i=0;i<nodes.length;i++){
-      for(let j=i+1;j<nodes.length;j++){
-        const dx=nodes[j].x-nodes[i].x, dy=nodes[j].y-nodes[i].y;
-        const d2=dx*dx+dy*dy+1e-4;
-        if(d2>0.25) continue;
-        const d=Math.sqrt(d2);
-        const f=0.0009/d2;
-        const fx=dx/d*f, fy=dy/d*f;
-        nodes[i].vx-=fx; nodes[i].vy-=fy;
-        nodes[j].vx+=fx; nodes[j].vy+=fy;
-      }
-    }
-    edges.forEach(e=>{
-      const na=nodes[e[0]], nb=nodes[e[1]];
-      const type=e[2];
-      const dx=nb.x-na.x, dy=nb.y-na.y;
-      const d=Math.sqrt(dx*dx+dy*dy)+1e-4;
-      const target = type==='EXPOSES' ? 0.05 : (type==='DEPLOYS' ? 0.18 : 0.14);
-      const f=(d-target)*0.05;
-      const fx=dx/d*f, fy=dy/d*f;
-      na.vx+=fx; na.vy+=fy;
-      nb.vx-=fx; nb.vy-=fy;
-    });
-    nodes.forEach(n=>{
-      n.vx+=(0.5-n.x)*0.003;
-      n.vy+=(0.5-n.y)*0.003;
-      n.vx*=0.78; n.vy*=0.78;
-      n.x+=n.vx; n.y+=n.vy;
-      n.x=Math.max(0.07,Math.min(0.93,n.x));
-      n.y=Math.max(0.10,Math.min(0.90,n.y));
-    });
-  }
-  nodes.forEach(n=>{delete n.vx;delete n.vy});
-}
-
+// ── Postman context graph: real service names + team colors, arranged in
+// concentric rings (1 center + 9 inner + 15 middle + 19 outer = 44 nodes).
 function buildGalaxy(){
-  const nodes=[]; const idx={};
-  // Service nodes — circular starting positions, force layout settles them
-  CG_SERVICES.forEach((s,i)=>{
-    const a=(i/CG_SERVICES.length)*Math.PI*2-Math.PI/2;
-    nodes.push({lbl:s.name, c:s.team, r:s.r,
-      x:0.5+Math.cos(a)*0.22, y:0.5+Math.sin(a)*0.22,
-      cat:'service', svcId:s.name,
-      center: s.name==='bifrost-gateway'});
-    idx[s.name]=nodes.length-1;
-  });
-  // Endpoint satellites — small unlabeled dots
-  CG_SERVICES.forEach(s=>{
-    if(s.endpoints===0) return;
-    const svcNode=nodes[idx[s.name]];
-    for(let e=0;e<s.endpoints;e++){
-      const a=(e/s.endpoints)*Math.PI*2;
-      nodes.push({lbl:'', c:s.team, r:4.5,
-        x:svcNode.x+Math.cos(a)*0.07, y:svcNode.y+Math.sin(a)*0.07,
-        cat:'endpoint', svcId:s.name});
-    }
-  });
-  // Cluster nodes — deployment targets, positioned at corners
-  CG_CLUSTERS.forEach((cl,i)=>{
-    const a=-Math.PI/2+(i+0.5)/CG_CLUSTERS.length*Math.PI*2;
-    nodes.push({lbl:cl, c:'platform', r:10,
-      x:0.5+Math.cos(a)*0.40, y:0.5+Math.sin(a)*0.38,
-      cat:'cluster', isCluster:true});
-    idx[cl]=nodes.length-1;
-  });
-  const edges=[];
-  CG_DEPS.forEach(([from,to])=>{
-    if(idx[from]!==undefined&&idx[to]!==undefined) edges.push([idx[from],idx[to],'DEPENDS_ON']);
-  });
-  nodes.forEach((n,i)=>{
-    if(n.cat==='endpoint'&&idx[n.svcId]!==undefined) edges.push([idx[n.svcId],i,'EXPOSES']);
-  });
-  CG_SERVICES.forEach((s,i)=>{
-    const cl=CG_CLUSTERS[i%CG_CLUSTERS.length];
-    if(idx[cl]!==undefined) edges.push([idx[s.name],idx[cl],'DEPLOYS']);
-  });
-  runForceLayout(nodes,edges,90);
+  const r1=58,r2=115,r3=172;
+  const i9=ringPts(9,r1), m15=ringPts(15,r2,Math.PI/15), o19=ringPts(19,r3,Math.PI/19);
+  const nodes=[
+    // Center — the gateway
+    {lbl:'bifrost-gateway', c:'platform', r:18, x:.5, y:.5, center:true},
+
+    // Inner ring — 9 core services
+    {lbl:'api-catalog-service', c:'catalog',  r:12, ...i9[0]},
+    {lbl:'payment-service',     c:'payments', r:11, ...i9[1]},
+    {lbl:'auth-service',        c:'platform', r:12, ...i9[2]},
+    {lbl:'user-service',        c:'platform', r:11, ...i9[3]},
+    {lbl:'workspace-service',   c:'core',     r:13, ...i9[4]},
+    {lbl:'collection-service',  c:'core',     r:11, ...i9[5]},
+    {lbl:'monitor-service',     c:'testing',  r:11, ...i9[6]},
+    {lbl:'flows-service',       c:'flows',    r:10, ...i9[7]},
+    {lbl:'insights-service',    c:'data',     r:10, ...i9[8]},
+
+    // Middle ring — 15 endpoints / sub-services
+    {lbl:'GET /catalog',     c:'catalog',  r:7, ...m15[0]},
+    {lbl:'POST /payments',   c:'payments', r:7, ...m15[1]},
+    {lbl:'GET /tokens',      c:'platform', r:7, ...m15[2]},
+    {lbl:'GET /users',       c:'platform', r:7, ...m15[3]},
+    {lbl:'GET /workspaces',  c:'core',     r:7, ...m15[4]},
+    {lbl:'POST /collections',c:'core',     r:7, ...m15[5]},
+    {lbl:'GET /monitors',    c:'testing',  r:7, ...m15[6]},
+    {lbl:'POST /flows',      c:'flows',    r:7, ...m15[7]},
+    {lbl:'GET /insights',    c:'data',     r:7, ...m15[8]},
+    {lbl:'auth-tokens',      c:'platform', r:6, ...m15[9]},
+    {lbl:'payment-vault',    c:'payments', r:6, ...m15[10]},
+    {lbl:'workspace-cache',  c:'core',     r:6, ...m15[11]},
+    {lbl:'test-runner',      c:'testing',  r:6, ...m15[12]},
+    {lbl:'metrics-collector',c:'data',     r:6, ...m15[13]},
+    {lbl:'flows-storage',    c:'flows',    r:6, ...m15[14]},
+
+    // Outer ring — 19 dependencies / infrastructure
+    {lbl:'OAuth',     c:'platform', r:6, ...o19[0]},
+    {lbl:'LDAP',      c:'platform', r:6, ...o19[1]},
+    {lbl:'Postgres',  c:'core',     r:6, ...o19[2]},
+    {lbl:'Redis',     c:'core',     r:6, ...o19[3]},
+    {lbl:'Kafka',     c:'data',     r:6, ...o19[4]},
+    {lbl:'S3',        c:'core',     r:6, ...o19[5]},
+    {lbl:'Lambda',    c:'flows',    r:6, ...o19[6]},
+    {lbl:'GraphQL',   c:'catalog',  r:6, ...o19[7]},
+    {lbl:'gRPC',      c:'platform', r:6, ...o19[8]},
+    {lbl:'Webhooks',  c:'testing',  r:6, ...o19[9]},
+    {lbl:'OpenAI',    c:'data',     r:7, ...o19[10]},
+    {lbl:'Pubsub',    c:'flows',    r:6, ...o19[11]},
+    {lbl:'Traefik',   c:'platform', r:5, ...o19[12]},
+    {lbl:'K8s',       c:'platform', r:6, ...o19[13]},
+    {lbl:'Consul',    c:'platform', r:5, ...o19[14]},
+    {lbl:'Datadog',   c:'data',     r:5, ...o19[15]},
+    {lbl:'Envoy',     c:'platform', r:5, ...o19[16]},
+    {lbl:'Vault',     c:'payments', r:5, ...o19[17]},
+    {lbl:'NATS',      c:'flows',    r:5, ...o19[18]},
+  ];
+  const N=nodes.length, edges=[];
+  for(let i=1;i<N;i++) edges.push([0,i]);
+  for(let i=1;i<=9;i++) edges.push([i,(i%9)+1]);
+  for(let i=10;i<25;i++) edges.push([i,10+(i-10+1)%15]);
+  for(let i=25;i<N;i++) edges.push([i,25+(i-25+1)%(N-25)]);
+  [[1,10],[2,11],[3,12],[4,13],[5,14],[6,15],[7,16],[8,17],[9,10],
+   [10,25],[11,26],[12,27],[13,28],[14,29],[15,30],[16,31],[17,32]
+  ].forEach(e=>{if(e[0]<N&&e[1]<N)edges.push(e);});
   return{nodes,edges};
 }
 const G=buildGalaxy();
