@@ -528,7 +528,10 @@ function onScroll(){
   const si=Math.min(Math.floor(raw),NS-2);
   const sf=raw-si;
   if(si!==prevS){prevS=si;nextS=Math.min(si+1,NS-1);}
-  tval=sf;
+  // Compress morph into first 65% of each inter-stage scroll; the remaining
+  // 35% holds the settled state so node labels stay readable.
+  const MORPH_END=0.65;
+  tval = sf < MORPH_END ? sf/MORPH_END : 1;
   const active=sf>.5?nextS:prevS;
   if(active!==lastStage){
     lastStage=active;
@@ -690,6 +693,7 @@ function nodeAtCanvasPoint(cx, cy){
   for (let i = 0; i < nodes.length; i++){
     const n = nodes[i];
     if (n.cat === 'endpoint') continue; // tiny satellites aren't click targets
+    if (n.center) continue; // central node has no hover/click after the build
     const x = n.x*CW, y = n.y*CH;
     const dx = cx-x, dy = cy-y;
     const hit = Math.max(n.r + 3, 8);
