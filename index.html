@@ -18,6 +18,7 @@
   a.card .tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
   .tag.interactive{background:#eeedfe;color:#534ab7}
   .tag.static{background:#e8f7ee;color:#3b8c5e}
+  .tag.postman{background:#dde6fa;color:#4F7FE8}
 </style>
 </head>
 <body>
@@ -25,6 +26,11 @@
   <h1>Context graph demos</h1>
   <p class="lede">Scroll-driven morph of a service architecture, evolving across six stages.</p>
   <div class="grid">
+    <a class="card" href="context-graph-postman.html">
+      <span class="tag postman">Postman style</span>
+      <h2>Real services + force layout</h2>
+      <p>Final graph mirrors postman_ui.html — real service names (api-catalog-service, bifrost-gateway…), team colors, endpoint satellites, force-directed layout, click-to-inspect panel + Sources panel.</p>
+    </a>
     <a class="card" href="scroll-animation-demo.html">
       <span class="tag interactive">Interactive</span>
       <h2>Scroll + click-to-inspect</h2>
