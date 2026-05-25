@@ -134,17 +134,19 @@
   .rp-meta{flex:1;min-width:0}
   .rp-name{font-size:13px;font-weight:600;color:#111;margin-bottom:2px}
   .rp-desc{font-size:11px;color:#888;line-height:1.35}
-  .rp-status{font-size:11px;color:#3b8c5e;font-weight:500;flex-shrink:0;white-space:nowrap}
-  .rp-status svg{vertical-align:-2px;margin-right:2px}
-  .rp-btn{font-size:11.5px;font-weight:500;color:#5B6EEA;background:#f0f2ff;border:none;padding:5px 11px;border-radius:6px;cursor:pointer;flex-shrink:0;font-family:inherit;white-space:nowrap}
+  .rp-status{width:22px;height:22px;border-radius:50%;background:#dcf2e4;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .rp-status svg{display:block}
+  .rp-btn{width:26px;height:26px;border-radius:6px;background:#f0f2ff;color:#5B6EEA;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0}
   .rp-btn:hover{background:#e6e9ff}
+  .rp-btn svg{display:block}
   .rp-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f4f4f7}
   .rp-row:last-child{border-bottom:none}
   .rp-row-icon{width:22px;height:22px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
   .rp-row-text{flex:1;font-size:11.5px;color:#888;line-height:1.4}
   .rp-row-text strong{color:#111;font-weight:600}
-  .rp-row-btn{font-size:11.5px;color:#5B6EEA;background:none;border:none;cursor:pointer;padding:2px 6px;font-family:inherit;font-weight:500;flex-shrink:0}
-  .rp-row-btn:hover{text-decoration:underline}
+  .rp-row-btn{width:22px;height:22px;color:#5B6EEA;background:#f0f2ff;border:none;border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .rp-row-btn:hover{background:#e6e9ff}
+  .rp-row-btn svg{display:block}
 </style>
 </head>
 <body>
@@ -207,9 +209,8 @@
               <div class="rp-name">GitHub</div>
               <div class="rp-desc">1,247 nodes added to graph</div>
             </div>
-            <div class="rp-status">
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#3b8c5e" stroke-width="2.5" stroke-linecap="round"><path d="M3 8l4 4 6-7"/></svg>
-              Connected
+            <div class="rp-status" aria-label="Connected">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3b8c5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 4 6-7"/></svg>
             </div>
           </div>
           <div class="rp-card connected">
@@ -220,9 +221,8 @@
               <div class="rp-name">Kubernetes</div>
               <div class="rp-desc">50 nodes added to graph</div>
             </div>
-            <div class="rp-status">
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#3b8c5e" stroke-width="2.5" stroke-linecap="round"><path d="M3 8l4 4 6-7"/></svg>
-              Connected
+            <div class="rp-status" aria-label="Connected">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3b8c5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 4 6-7"/></svg>
             </div>
           </div>
 
@@ -235,29 +235,39 @@
               <div class="rp-name">Jira</div>
               <div class="rp-desc">Teams, owners &amp; maturity phases</div>
             </div>
-            <button class="rp-btn">+ Connect</button>
+            <button class="rp-btn" aria-label="Connect">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </button>
           </div>
 
           <div class="rp-section">Enrich further</div>
           <div class="rp-row">
             <div class="rp-row-icon" style="background:#008c99"></div>
             <div class="rp-row-text"><strong>New Relic</strong> — Telemetry nodes to <strong>89 services</strong></div>
-            <button class="rp-row-btn">+ Add</button>
+            <button class="rp-row-btn" aria-label="Add">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </button>
           </div>
           <div class="rp-row">
             <div class="rp-row-icon" style="background:#6e4ed1"></div>
             <div class="rp-row-text"><strong>Wiz</strong> — Security scans across <strong>115 services</strong></div>
-            <button class="rp-row-btn">+ Add</button>
+            <button class="rp-row-btn" aria-label="Add">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </button>
           </div>
           <div class="rp-row">
             <div class="rp-row-icon" style="background:#632ca6"></div>
             <div class="rp-row-text"><strong>Datadog</strong> — Monitoring metrics to <strong>89 services</strong></div>
-            <button class="rp-row-btn">+ Add</button>
+            <button class="rp-row-btn" aria-label="Add">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </button>
           </div>
           <div class="rp-row">
             <div class="rp-row-icon" style="background:#06ac38"></div>
             <div class="rp-row-text"><strong>PagerDuty</strong> — On-call rotations for <strong>16 teams</strong></div>
-            <button class="rp-row-btn">+ Add</button>
+            <button class="rp-row-btn" aria-label="Add">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </button>
           </div>
         </div>
       </div>
