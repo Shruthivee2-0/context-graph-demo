@@ -243,14 +243,14 @@
           <div class="rp-section">Enrich further</div>
           <div class="rp-row">
             <div class="rp-row-icon" style="background:#008c99"></div>
-            <div class="rp-row-text"><strong>New Relic</strong> — Telemetry nodes to <strong>89 services</strong></div>
+            <div class="rp-row-text"><strong>New Relic</strong> - Telemetry nodes to <strong>89 services</strong></div>
             <button class="rp-row-btn" aria-label="Add">
               <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
             </button>
           </div>
           <div class="rp-row">
             <div class="rp-row-icon" style="background:#6e4ed1"></div>
-            <div class="rp-row-text"><strong>Wiz</strong> — Security scans across <strong>115 services</strong></div>
+            <div class="rp-row-text"><strong>Wiz</strong> - Security scans across <strong>115 services</strong></div>
             <button class="rp-row-btn" aria-label="Add">
               <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
             </button>
@@ -321,10 +321,10 @@ function buildGalaxy(){
   const r1=58,r2=115,r3=172;
   const i9=ringPts(9,r1), m15=ringPts(15,r2,Math.PI/15), o19=ringPts(19,r3,Math.PI/19);
   const nodes=[
-    // Center — the gateway
+    // Center - the gateway
     {lbl:'bifrost-gateway', c:'platform', r:18, x:.5, y:.5, center:true},
 
-    // Inner ring — 9 core services
+    // Inner ring - 9 core services
     {lbl:'api-catalog-service', c:'catalog',  r:12, ...i9[0]},
     {lbl:'payment-service',     c:'payments', r:11, ...i9[1]},
     {lbl:'auth-service',        c:'platform', r:12, ...i9[2]},
@@ -335,7 +335,7 @@ function buildGalaxy(){
     {lbl:'flows-service',       c:'flows',    r:10, ...i9[7]},
     {lbl:'insights-service',    c:'data',     r:10, ...i9[8]},
 
-    // Middle ring — 15 endpoints / sub-services
+    // Middle ring - 15 endpoints / sub-services
     {lbl:'GET /catalog',     c:'catalog',  r:7, ...m15[0]},
     {lbl:'POST /payments',   c:'payments', r:7, ...m15[1]},
     {lbl:'GET /tokens',      c:'platform', r:7, ...m15[2]},
@@ -352,7 +352,7 @@ function buildGalaxy(){
     {lbl:'metrics-collector',c:'data',     r:6, ...m15[13]},
     {lbl:'flows-storage',    c:'flows',    r:6, ...m15[14]},
 
-    // Outer ring — 19 dependencies / infrastructure
+    // Outer ring - 19 dependencies / infrastructure
     {lbl:'OAuth',     c:'platform', r:6, ...o19[0]},
     {lbl:'LDAP',      c:'platform', r:6, ...o19[1]},
     {lbl:'Postgres',  c:'core',     r:6, ...o19[2]},
@@ -473,7 +473,7 @@ function draw(){
     if(n.center&&isG){
       const pT=pulse*.04;
       const fade=hasClickedNode?Math.max(0,1-(pulse-clickFrame)*.02):1;
-      // Expanding ripple ring (stroke) — telegraphs "click me"
+      // Expanding ripple ring (stroke) - telegraphs "click me"
       const rip=(pulse%90)/90;
       ctx.save();
       ctx.globalAlpha=(1-rip)*.5*fade;
