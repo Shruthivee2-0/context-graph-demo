@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup - Autonomous Engineer blog embed</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;color:#101010;background:#fff;line-height:1.6;
+  }
+
+  /* Postman-blog-ish top bar */
+  .topbar{
+    background:#fff;border-bottom:1px solid #eee;padding:14px 32px;
+    display:flex;align-items:center;gap:20px;
+  }
+  .logo{font-weight:700;font-size:18px;letter-spacing:-.01em}
+  .logo span{color:#ff6c37}
+  .nav{display:flex;gap:22px;font-size:13px;color:#555}
+
+  /* Container mimics Bootstrap col-lg-9 (~75% of ~1140) */
+  .container{max-width:1140px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 280px;gap:40px}
+  @media (max-width:900px){.container{grid-template-columns:1fr}}
+
+  article{padding:40px 0}
+  .breadcrumbs{font-size:12px;color:#888;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
+  h1{font-size:42px;font-weight:700;line-height:1.15;letter-spacing:-.02em;margin-bottom:14px}
+  .byline{display:flex;align-items:center;gap:12px;margin-bottom:32px;color:#777;font-size:13px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#8B7355,#6B5335)}
+  article p{font-size:16px;color:#2a2a2a;margin-bottom:20px}
+  article h2{font-size:26px;font-weight:700;letter-spacing:-.01em;margin:36px 0 16px}
+  article a{color:#ff6c37;text-decoration:underline;text-decoration-color:rgba(255,108,55,.35)}
+
+  /* Sidebar (col-lg-3 equivalent) */
+  aside{padding:48px 0 0;font-size:13px;color:#555}
+  aside h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:12px;font-weight:600}
+  aside .tag{display:inline-block;padding:4px 10px;background:#f3f3f5;border-radius:20px;margin:0 4px 6px 0;font-size:12px;color:#444}
+  aside .toc{margin-top:32px}
+  aside .toc li{list-style:none;padding:6px 0;font-size:13px;color:#555;border-left:2px solid #f0f0f0;padding-left:10px;margin-bottom:2px;cursor:pointer}
+  aside .toc li.active{border-left-color:#ff6c37;color:#101010;font-weight:500}
+
+  .embed-frame{
+    width:100%;height:640px;border:none;display:block;
+    background:#ffffff;
+  }
+  .embed-fullbleed{
+    position:relative;left:50%;transform:translateX(-50%);
+    width:960px;max-width:100vw;margin-top:24px;margin-bottom:24px;
+  }
+
+  .embed-callout{
+    margin:24px 0 0;font-size:12px;color:#999;
+    border-left:3px solid #ffd9c4;padding:8px 12px;background:#fff8f4;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">post<span>man</span> blog</div>
+  <div class="nav">
+    <span>Engineering</span><span>Product</span><span>Community</span><span>Customer Stories</span>
+  </div>
+</div>
+
+<div class="container">
+  <article>
+    <div class="breadcrumbs">Home &nbsp;›&nbsp; Featured</div>
+    <h1>Autonomous Engineer</h1>
+    <div class="byline">
+      <div class="avatar"></div>
+      <div><b>Postman Engineering</b> · <span style="color:#aaa">5 min read</span></div>
+    </div>
+
+    <p>Postman's AI-native API platform is getting a major upgrade today. We're excited to announce the launch of the <b>Autonomous API Engineer</b> - the next phase of Postman AI capabilities.</p>
+
+    <p>Developers have been the fastest adopters of AI. That's no surprise - code is abundant training data, and code generation is verifiable in ways most knowledge work isn't. But building software has never been just writing code.</p>
+
+    <h2>What is the problem</h2>
+
+    <p>As agents become part of engineering teams, two distinct challenges emerge in non-trivial applications:</p>
+
+    <p style="margin-left:20px">
+      1. How do agents understand existing software systems well enough to be productive companions?<br>
+      2. As software production accelerates, how do agents stay on course without creating a spaghetti mess?
+    </p>
+
+    <p>Software systems evolve from prototypes into landscapes of thousands of APIs, services, databases, and event queues. As these systems come into existence, they don't just interact in the ways they were designed to - they interact with each other in ways no one fully anticipated.</p>
+
+    <!-- ── EMBEDDED ANIMATION (full-bleed, breaks out of article column) ── -->
+    <div class="embed-fullbleed">
+      <iframe
+        class="embed-frame"
+        src="https://shruthivee2-0.github.io/context-graph-demo/context-graph-blog.html?v=17"
+        loading="lazy"
+        title="Scroll-driven morph of a service architecture, evolving from a single app to a full context graph">
+      </iframe>
+    </div>
+    <div class="embed-callout">↑ iframe is 960 px wide (centered, breaks out partially) × 640 px tall. Compact demo (200 + 8 + 520 + 8 + 200 = 936 px) stays horizontal with tight gaps.</div>
+
+    <p>We see this bottleneck in customer organizations every day. Most have hundreds of thousands of systems built over multiple decades. The people maintaining them are often the highest-paid, most accomplished engineers in the company - the ones who keep all that context in their heads.</p>
+
+    <p>With AI and agentic engineering, all of this happens at a much faster pace. As production increases, so does <b>context debt</b>. Like technical debt, context debt compounds: every new service, every new contract, every agent-generated change adds to the body of prior work that any future change has to understand.</p>
+
+    <h2>What is the solution</h2>
+
+    <p>Our answer to context debt is the <b>Autonomous API Engineer</b> - the continued evolution of Postman's agentic capabilities.</p>
+  </article>
+
+  <aside>
+    <h3>Tags</h3>
+    <span class="tag">AI</span><span class="tag">Agents</span><span class="tag">Context Graph</span><span class="tag">API</span>
+
+    <div class="toc">
+      <h3>On this page</h3>
+      <ul>
+        <li>What is the problem</li>
+        <li class="active">What is the solution</li>
+        <li>What it can do</li>
+        <li>How it works</li>
+        <li>Why Postman?</li>
+        <li>Is it safe?</li>
+        <li>How to get access</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+</body>
+</html>
