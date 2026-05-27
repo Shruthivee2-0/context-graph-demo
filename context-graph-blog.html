@@ -57,9 +57,7 @@
     height:540px;overflow-y:scroll;overflow-x:hidden;
     position:relative;
     background:var(--canvas-bg);
-    scrollbar-width:none;-ms-overflow-style:none;
   }
-  #world::-webkit-scrollbar{display:none;width:0;height:0}
   #track{height:12000px;position:relative}
   #sticky{position:sticky;top:0;height:540px;overflow:hidden;background:var(--canvas-bg)}
   canvas{display:block;width:100%;height:540px}
@@ -69,7 +67,7 @@
   #dots{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
   .dot{width:6px;height:6px;border-radius:50%;background:#e4e4e8;border:none;cursor:pointer;padding:0;transition:background .25s,transform .25s}
   .dot.on{background:#5B6EEA;transform:scale(1.35)}
-  #hint{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--text-4);white-space:nowrap;transition:opacity .4s;letter-spacing:.01em}
+  #hint{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-size:14px;font-weight:500;color:var(--text-3);white-space:nowrap;transition:opacity .4s;letter-spacing:.01em}
 
   /* ── NODE DETAIL PANEL (Postman style) ── */
   #nd{
@@ -544,10 +542,14 @@ function onScroll(){
       openDetail(bifrostIdx>=0?bifrostIdx:0);
       hasClickedNode = true;
       clickFrame = pulse;
-      world.scrollTop = 12000 - 540;
       document.querySelector('.demo-layout').classList.add('locked');
-      world.style.overflowY = 'hidden';
     }
+  }
+  // Auto-close panel + unlock layout if user scrolls back away from the end
+  const ndElScroll = document.getElementById('nd');
+  if (!atEnd && ndElScroll && ndElScroll.classList.contains('open')){
+    ndElScroll.classList.remove('open');
+    document.querySelector('.demo-layout').classList.remove('locked');
   }
 }
 world.addEventListener('scroll',onScroll,{passive:true});
@@ -636,7 +638,6 @@ const nd = document.getElementById('nd');
 document.getElementById('nd-close').addEventListener('click', () => {
   nd.classList.remove('open');
   document.querySelector('.demo-layout').classList.remove('locked');
-  world.style.overflowY = '';
 });
 
 function openDetail(nodeIdx){
@@ -707,10 +708,9 @@ canvas.addEventListener('click', ev => {
   if (idx >= 0) {
     openDetail(idx);
     if (!hasClickedNode) { hasClickedNode = true; clickFrame = pulse; }
-    // Always snap to final stage + lock layout/scroll while panel is open
-    world.scrollTop = 12000 - 540;
+    // Expand the layout to show the panel (scroll remains enabled
+    // so the user can still scroll back through the animation)
     document.querySelector('.demo-layout').classList.add('locked');
-    world.style.overflowY = 'hidden';
   }
 });
 
