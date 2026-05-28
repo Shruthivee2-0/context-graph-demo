@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Context Graph: Static UI</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#ffffff;
+    --canvas-bg:#ffffff;
+    --grid:rgba(17,17,17,0.04);
+    --edge:#e4e4e8;
+    --border:#e4e4e8;
+    --text-1:#111;
+    --text-2:#555;
+    --text-3:#999;
+    --text-4:#cccccc;
+  }
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;background:#ffffff;color:var(--text-1)}
+  .page{max-width:960px;margin:24px auto;padding:0 12px}
+
+  .demo-layout{
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    gap:0;
+  }
+  .nd-col, .sources-col{
+    width:0;
+    flex-shrink:0;
+    overflow:hidden;
+    transition:width .4s cubic-bezier(.4,0,.2,1), margin .4s cubic-bezier(.4,0,.2,1);
+  }
+  .nd-col{margin-right:0}
+  .sources-col{margin-left:0}
+  .demo-layout.locked .nd-col{
+    width:200px;
+    margin-right:8px;
+  }
+  .demo-layout.locked .sources-col{
+    width:200px;
+    margin-left:8px;
+  }
+  #nd{width:200px}
+  #rp{width:200px}
+  @media (max-width: 760px){
+    .demo-layout{flex-direction:column;align-items:center;gap:0}
+    .nd-col,.sources-col{width:100%;max-width:520px;margin:0;height:0;transition:height .4s ease,margin .4s ease}
+    .demo-layout.locked .nd-col{width:100%;height:auto;margin:0 0 12px 0}
+    .demo-layout.locked .sources-col{width:100%;height:auto;margin:12px 0 0 0}
+    #nd,#rp{width:100%}
+  }
+
+  #world{
+    width:540px;max-width:100%;flex-shrink:1;min-width:0;
+    height:540px;overflow-y:scroll;overflow-x:hidden;
+    position:relative;
+    background:var(--canvas-bg);
+  }
+  #track{height:540px;position:relative}
+  #sticky{position:relative;top:0;height:540px;overflow:hidden;background:var(--canvas-bg)}
+  #world{overflow:hidden !important}
+  #dots,#hint{display:none}
+  canvas{display:block;width:100%;height:540px}
+  #ui{position:absolute;top:14px;left:0;right:0;text-align:center;pointer-events:none}
+  #ui h3{font-size:15px;font-weight:600;color:var(--text-1);margin-bottom:2px;letter-spacing:-0.01em}
+  #ui p{font-size:11px;color:var(--text-3);font-weight:400}
+  #dots{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
+  .dot{width:7px;height:7px;border-radius:50%;background:#e4e4e8;border:none;cursor:pointer;padding:0;transition:background .25s,transform .25s}
+  .dot.on{background:#5B6EEA;transform:scale(1.35)}
+  #hint{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-size:14px;font-weight:500;color:var(--text-3);white-space:nowrap;transition:opacity .4s;letter-spacing:.01em}
+
+  /* ── NODE DETAIL PANEL (Postman style) ── */
+  #nd{
+    width:100%;
+    background:#fff; border:1px solid #e4e4e8; border-radius:12px;
+    box-shadow:0 8px 32px rgba(17,17,17,0.06);
+    overflow:hidden; display:none; max-height:540px;
+    overflow-y:auto;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color:#111;
+    animation: nd-in .15s ease;
+  }
+  #nd.open{display:block}
+  @keyframes nd-in{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+  .nd-header{padding:14px 14px 12px;border-bottom:1px solid #f0f0f3;position:relative}
+  .nd-badges{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+  .nd-type{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px}
+  .nd-team{font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px}
+  .nd-name{font-size:13px;font-weight:600;color:#111;font-family:ui-monospace,Menlo,monospace;line-height:1.3;padding-right:20px}
+  .nd-close{position:absolute;top:12px;right:12px;background:none;border:none;color:#bbb;font-size:14px;cursor:pointer;padding:2px}
+  .nd-close:hover{color:#555}
+  .nd-body{padding:12px 14px}
+  .nd-stats{display:flex;gap:0;margin-bottom:14px}
+  .nd-stat{flex:1;text-align:center;padding:8px 4px;border-right:1px solid #f0f0f3}
+  .nd-stat:last-child{border-right:none}
+  .nd-stat b{display:block;font-size:15px;font-weight:700;color:#111}
+  .nd-stat span{font-size:8px;color:#bbb;text-transform:uppercase;letter-spacing:0.4px}
+  .nd-sec{font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:#ccc;margin-bottom:7px;margin-top:12px}
+  .nd-rels{display:flex;flex-direction:column;gap:4px}
+  .nd-rel{display:flex;align-items:center;gap:5px;font-size:11.5px;color:#888;padding:3px 0;border-bottom:1px solid #f4f4f7}
+  .nd-rel:last-child{border-bottom:none}
+  .nd-rtype{font-size:10px;font-family:ui-monospace,Menlo,monospace;background:#fef3e2;color:#c87a48;padding:1px 5px;border-radius:3px;flex-shrink:0}
+  .nd-rtgt{color:#333;font-family:ui-monospace,Menlo,monospace;font-size:11px}
+  .nd-src-chips{display:flex;flex-wrap:wrap;gap:5px}
+  .nd-src{font-size:10.5px;background:#f5f5f7;border:1px solid #e8e8ec;border-radius:4px;padding:2px 7px;color:#888}
+  .nd-actions{display:flex;flex-direction:column;gap:5px;margin-top:14px}
+  .nd-action{display:flex;align-items:center;justify-content:space-between;background:none;border:1px solid #e4e4e8;border-radius:7px;color:#555;font-size:12px;padding:8px 10px;cursor:pointer;text-align:left;font-family:inherit;transition:border-color .15s,color .15s}
+  .nd-action:hover{border-color:#5B6EEA;color:#5B6EEA}
+  .nd-action svg{flex-shrink:0}
+
+  /* click hint shown on final stage */
+  #click-hint{position:absolute;top:60px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--color-text-tertiary);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
+  #click-hint.show{opacity:1}
+
+  /* ── RIGHT SOURCES PANEL ── */
+  #rp{
+    background:#fff;border:1px solid #e4e4e8;border-radius:12px;
+    box-shadow:0 8px 32px rgba(17,17,17,0.06);
+    overflow:hidden;
+    font-family:inherit;color:#111;
+    animation:rp-in .15s ease;
+  }
+  @keyframes rp-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+  .rp-tabs{display:flex;border-bottom:1px solid #e8e8ec;padding:0 12px}
+  .rp-tab{flex:0 0 auto;padding:12px 12px;background:none;border:none;font-size:12.5px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;transition:color .15s}
+  .rp-tab.active{color:#5B6EEA;border-bottom-color:#5B6EEA;font-weight:600}
+  .rp-body{padding:14px}
+  .rp-section{font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:#bbb;margin:14px 0 8px;font-weight:600}
+  .rp-section:first-child{margin-top:0}
+  .rp-card{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid #e4e4e8;border-radius:10px;margin-bottom:6px}
+  .rp-card.connected{border-color:#c7ebd1;background:#f3faf6}
+  .rp-logo{width:32px;height:32px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff}
+  .rp-logo svg{width:18px;height:18px}
+  .rp-meta{flex:1;min-width:0}
+  .rp-name{font-size:13px;font-weight:600;color:#111;margin-bottom:2px}
+  .rp-desc{font-size:11px;color:#888;line-height:1.35}
+  .rp-status{width:22px;height:22px;border-radius:50%;background:#dcf2e4;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .rp-status svg{display:block}
+  .rp-btn{width:26px;height:26px;border-radius:6px;background:#f0f2ff;color:#5B6EEA;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0}
+  .rp-btn:hover{background:#e6e9ff}
+  .rp-btn svg{display:block}
+  .rp-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f4f4f7}
+  .rp-row:last-child{border-bottom:none}
+  .rp-row-icon{width:22px;height:22px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .rp-row-text{flex:1;font-size:11.5px;color:#888;line-height:1.4}
+  .rp-row-text strong{color:#111;font-weight:600}
+  .rp-row-btn{width:22px;height:22px;color:#5B6EEA;background:#f0f2ff;border:none;border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .rp-row-btn:hover{background:#e6e9ff}
+  .rp-row-btn svg{display:block}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="demo-layout locked">
+    <aside class="nd-col">
+      <div id="nd">
+        <div class="nd-header">
+          <div class="nd-badges">
+            <span class="nd-type" id="nd-type">Service</span>
+            <span class="nd-team" id="nd-team"></span>
+          </div>
+          <div class="nd-name" id="nd-name"></div>
+          <button class="nd-close" id="nd-close" aria-label="Close">✕</button>
+        </div>
+        <div class="nd-body">
+          <div class="nd-stats" id="nd-stats"></div>
+          <div class="nd-sec">Relationships</div>
+          <div class="nd-rels" id="nd-rels"></div>
+          <div class="nd-sec">Data sources</div>
+          <div class="nd-src-chips" id="nd-sources"></div>
+          <div class="nd-actions">
+            <button class="nd-action">View in API Catalog
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 10 L10 2 M5 2 h5 v5"/></svg>
+            </button>
+            <button class="nd-action">View code
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 10 L10 2 M5 2 h5 v5"/></svg>
+            </button>
+            <button class="nd-action">See tests
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 10 L10 2 M5 2 h5 v5"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div id="world">
+      <div id="track">
+        <div id="sticky">
+          <canvas id="c"></canvas>
+          <div id="ui"><h3 id="ttl">Basic local app</h3></div>
+          <div id="click-hint">click any node to inspect</div>
+          <div id="dots"></div>
+          <div id="hint">scroll to build ↓</div>
+        </div>
+      </div>
+    </div>
+    <aside class="sources-col">
+      <div id="rp">
+        <div class="rp-tabs">
+          <button class="rp-tab active">Sources</button>
+          <button class="rp-tab">Insights</button>
+        </div>
+        <div class="rp-body">
+          <div class="rp-section">Connected</div>
+          <div class="rp-card connected">
+            <div class="rp-logo" style="background:#1a1a1a">
+              <svg viewBox="0 0 16 16" fill="#fff"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            </div>
+            <div class="rp-meta">
+              <div class="rp-name">GitHub</div>
+              <div class="rp-desc">1,247 nodes added to graph</div>
+            </div>
+            <div class="rp-status" aria-label="Connected">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3b8c5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 4 6-7"/></svg>
+            </div>
+          </div>
+          <div class="rp-card connected">
+            <div class="rp-logo" style="background:#3970e4">
+              <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 1.5L4 5.7v8.6L12 18.5l8-4.2V5.7L12 1.5zm0 2.2l5.9 3.1L12 9.9 6.1 6.8 12 3.7zM5 8.6l6 3.2v7l-6-3.2v-7zm14 0v7l-6 3.2v-7l6-3.2z"/></svg>
+            </div>
+            <div class="rp-meta">
+              <div class="rp-name">Kubernetes</div>
+              <div class="rp-desc">50 nodes added to graph</div>
+            </div>
+            <div class="rp-status" aria-label="Connected">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3b8c5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 4 6-7"/></svg>
+            </div>
+          </div>
+
+          <div class="rp-section">Add more context</div>
+          <div class="rp-card">
+            <div class="rp-logo" style="background:#0052cc">
+              <svg viewBox="0 0 24 24" fill="#fff"><path d="M11.5 2.5L2.5 11.5l9 9 4.5-4.5-4.5-4.5L16 7l-4.5-4.5zm10 10L17 17l4.5 4.5 4.5-4.5h-4.5z" opacity=".4"/><path d="M11.5 2.5L2.5 11.5l4.5 4.5L11.5 11.5l4.5-4.5z"/></svg>
+            </div>
+            <div class="rp-meta">
+              <div class="rp-name">Jira</div>
+              <div class="rp-desc">Teams, owners &amp; maturity phases</div>
+            </div>
+            <button class="rp-btn" aria-label="Connect">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </button>
+          </div>
+
+          <div class="rp-section">Enrich further</div>
+          <div class="rp-row">
+            <div class="rp-row-icon" style="background:#008c99"></div>
+            <div class="rp-row-text"><strong>New Relic</strong> - Telemetry nodes to <strong>89 services</strong></div>
+            <button class="rp-row-btn" aria-label="Add">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </button>
+          </div>
+          <div class="rp-row">
+            <div class="rp-row-icon" style="background:#6e4ed1"></div>
+            <div class="rp-row-text"><strong>Wiz</strong> - Security scans across&nbsp;<strong style="white-space:nowrap">115&nbsp;services</strong></div>
+            <button class="rp-row-btn" aria-label="Add">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+let CW, CH;
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const world=document.getElementById('world');
+const DPR=window.devicePixelRatio||1;
+function setCanvasSize(){
+  CW=canvas.clientWidth||680;
+  CH=canvas.clientHeight||540;
+  canvas.width=Math.round(CW*DPR);
+  canvas.height=Math.round(CH*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+setCanvasSize();
+
+function pal(){
+  return{
+    bg:'#ffffff',
+    dot:'rgba(17,17,17,0.05)',
+    edge:'#e4e4e8',
+    lbl:'#555',
+    cols:{
+      purple:{f:'#eeedfe',s:'#534ab7'},
+      teal:  {f:'#e1f5ee',s:'#0f6e56'},
+      coral: {f:'#faece7',s:'#c87a48'},
+      blue:  {f:'#e6f1fb',s:'#5B8EEA'},
+      amber: {f:'#faeeda',s:'#b88227'},
+      pink:  {f:'#fbeaf0',s:'#D47FAE'},
+      gray:  {f:'#f5f5f7',s:'#888'},
+      green: {f:'#eaf3de',s:'#4CAF82'},
+      // Postman team colors (final-stage context graph)
+      platform:{f:'#dde6fa',s:'#4F7FE8'},
+      core:    {f:'#cdf2e2',s:'#10B981'},
+      catalog: {f:'#fde5cf',s:'#F97316'},
+      payments:{f:'#fbd5e6',s:'#EC4899'},
+      testing: {f:'#e0d4f8',s:'#8B5CF6'},
+      flows:   {f:'#cfeff5',s:'#06B6D4'},
+      data:    {f:'#fbe9c4',s:'#F59E0B'},
+    }
+  };
+}
+
+function lerp(a,b,t){return a+(b-a)*t}
+function eio(t){return t<.5?2*t*t:-1+(4-2*t)*t}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+function ringPts(n,R,off){
+  off=off||0;
+  return Array.from({length:n},(_,i)=>{
+    const a=(i/n)*Math.PI*2-Math.PI/2+off;
+    return{x:(CW/2+Math.cos(a)*R)/CW, y:(CH/2+Math.sin(a)*R)/CH};
+  });
+}
+
+// Deterministic pseudo-random per index (stable across reloads).
+function srand(i, salt){
+  const x = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// Random points distributed inside the unit sphere (volume-uniform via
+// cube-root radius). Used to fill the orb's interior so it reads as
+// dense rather than as a hollow shell.
+function interiorPoints(n){
+  const pts = [];
+  for(let i = 0; i < n; i++){
+    const u = srand(i, 11);
+    const v = srand(i, 23);
+    const w = srand(i, 41);
+    const theta = 2 * Math.PI * u;
+    const phi = Math.acos(2 * v - 1);
+    const r = Math.cbrt(w) * 0.85;       // cube root for uniform volume; cap at 0.85
+    pts.push({
+      px: r * Math.sin(phi) * Math.cos(theta),
+      py: r * Math.cos(phi),
+      pz: r * Math.sin(phi) * Math.sin(theta),
+    });
+  }
+  return pts;
+}
+
+// Evenly distributed points on a unit sphere (Fibonacci spiral).
+function fibonacciSphere(n){
+  const pts=[];
+  const phi=Math.PI*(3-Math.sqrt(5));
+  for(let i=0;i<n;i++){
+    const y=1-(i/(n-1))*2;
+    const radius=Math.sqrt(1-y*y);
+    const theta=phi*i;
+    pts.push({px:Math.cos(theta)*radius, py:y, pz:Math.sin(theta)*radius});
+  }
+  return pts;
+}
+
+// Connect each node to its K nearest 3D neighbours.
+function nearestNeighbourEdges(nodes,K){
+  const edges=[];
+  const seen=new Set();
+  for(let i=0;i<nodes.length;i++){
+    if(nodes[i].px===undefined) continue;
+    const d=[];
+    for(let j=0;j<nodes.length;j++){
+      if(j===i||nodes[j].px===undefined) continue;
+      const dx=nodes[i].px-nodes[j].px;
+      const dy=nodes[i].py-nodes[j].py;
+      const dz=nodes[i].pz-nodes[j].pz;
+      d.push([j,dx*dx+dy*dy+dz*dz]);
+    }
+    d.sort((a,b)=>a[1]-b[1]);
+    for(let k=0;k<K&&k<d.length;k++){
+      const j=d[k][0];
+      const key=i<j?`${i}-${j}`:`${j}-${i}`;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      edges.push([i,j]);
+    }
+  }
+  return edges;
+}
+
+// ── Postman context graph: 44 nodes positioned on a Fibonacci sphere
+// (replaces the old 1+9+15+19 concentric-ring layout). Each node still
+// carries its Postman team colour, service label, and base radius — the
+// sphere is rendered with depth shading and slow Y-axis rotation when
+// fully settled.
+const ORB_META = [
+  // 10 primary named services — full names preserved
+  {lbl:'bifrost-gateway',    c:'platform', r:14},
+  {lbl:'api-catalog-service',c:'catalog',  r:12},
+  {lbl:'payment-service',    c:'payments', r:11},
+  {lbl:'auth-service',       c:'platform', r:12},
+  {lbl:'user-service',       c:'platform', r:11},
+  {lbl:'workspace-service',  c:'core',     r:13},
+  {lbl:'collection-service', c:'core',     r:11},
+  {lbl:'monitor-service',    c:'testing',  r:11},
+  {lbl:'flows-service',      c:'flows',    r:10},
+  {lbl:'insights-service',   c:'data',     r:10},
+  // Everything else collapses into three short labels: API / MCP / DB.
+  // 9 endpoint nodes (was GET /catalog, POST /payments, …)
+  {lbl:'API', c:'catalog',  r:7},
+  {lbl:'API', c:'payments', r:7},
+  {lbl:'API', c:'platform', r:7},
+  {lbl:'API', c:'platform', r:7},
+  {lbl:'API', c:'core',     r:7},
+  {lbl:'API', c:'core',     r:7},
+  {lbl:'API', c:'testing',  r:7},
+  {lbl:'API', c:'flows',    r:7},
+  {lbl:'API', c:'data',     r:7},
+  // 6 middle-ring stores / runners
+  {lbl:'DB',  c:'platform', r:6},   // was auth-tokens
+  {lbl:'DB',  c:'payments', r:6},   // was payment-vault
+  {lbl:'DB',  c:'core',     r:6},   // was workspace-cache
+  {lbl:'API', c:'testing',  r:6},   // was test-runner
+  {lbl:'API', c:'data',     r:6},   // was metrics-collector
+  {lbl:'DB',  c:'flows',    r:6},   // was flows-storage
+  // 19 outer-ring infrastructure
+  {lbl:'API', c:'platform', r:6},   // was OAuth
+  {lbl:'API', c:'platform', r:6},   // was LDAP
+  {lbl:'DB',  c:'core',     r:6},   // was Postgres
+  {lbl:'DB',  c:'core',     r:6},   // was Redis
+  {lbl:'DB',  c:'data',     r:6},   // was Kafka
+  {lbl:'DB',  c:'core',     r:6},   // was S3
+  {lbl:'API', c:'flows',    r:6},   // was Lambda
+  {lbl:'MCP', c:'catalog',  r:6},   // was MCP Tools
+  {lbl:'API', c:'platform', r:6},   // was gRPC
+  {lbl:'MCP', c:'testing',  r:6},   // was MCP Client
+  {lbl:'MCP', c:'data',     r:7},   // was MCP Server
+  {lbl:'API', c:'flows',    r:6},   // was Pubsub
+  {lbl:'API', c:'platform', r:5},   // was Traefik
+  {lbl:'API', c:'platform', r:6},   // was K8s
+  {lbl:'API', c:'platform', r:5},   // was Consul
+  {lbl:'API', c:'data',     r:5},   // was Datadog
+  {lbl:'API', c:'platform', r:5},   // was Envoy
+  {lbl:'DB',  c:'payments', r:5},   // was Vault
+  {lbl:'API', c:'flows',    r:5},   // was NATS
+];
+
+function buildGalaxy(){
+  const sphere = fibonacciSphere(ORB_META.length);
+  const nodes = ORB_META.map((m, i) => ({
+    ...m,
+    px: sphere[i].px, py: sphere[i].py, pz: sphere[i].pz,
+    _origR: m.r,
+    x: 0.5 + sphere[i].px * 0.36,
+    y: 0.5 - sphere[i].py * 0.36,
+    _depth: sphere[i].pz,
+  }));
+
+  // Swap label metadata between sphere positions to control which
+  // services sit where on the orb. Positions (px/py/pz/x/y/_depth)
+  // stay anchored to each index — only label / color / size move.
+  const swapMeta = (a, b) => {
+    const fields = ['lbl', 'c', '_origR'];
+    for(const f of fields){ const t = nodes[a][f]; nodes[a][f] = nodes[b][f]; nodes[b][f] = t; }
+    nodes[a].r = nodes[a]._origR;
+    nodes[b].r = nodes[b]._origR;
+  };
+
+  // bifrost-gateway → front-centre of the orb (i=19, near (0.48, 0.46))
+  swapMeta(0, 19);
+
+  // Named primary services pulled into the lower-right quadrant:
+  // i=24 (0.68, 0.54), i=26 (0.82, 0.58), i=29 (0.80, 0.63),
+  // i=31 (0.67, 0.66), i=34 (0.79, 0.71), i=37 (0.67, 0.76)
+  swapMeta(1, 24);   // api-catalog-service
+  swapMeta(2, 26);   // payment-service
+  swapMeta(5, 29);   // workspace-service
+  swapMeta(6, 31);   // collection-service
+  swapMeta(7, 34);   // monitor-service
+  swapMeta(9, 37);   // insights-service
+
+  // bifrost is now at index 19 — mark it as the visual centre anchor.
+  nodes[19].center = true;
+
+  // Add interior filler nodes so the orb feels dense (heavy) instead
+  // of looking like a hollow wireframe shell. No labels — they're
+  // pure visual mass. Small, randomly coloured across the palette.
+  const TEAM_KEYS = ['catalog','payments','platform','core','testing','flows','data'];
+  const FILLER_COUNT = 38;
+  interiorPoints(FILLER_COUNT).forEach((p, i) => {
+    const r = 3 + srand(i, 71) * 2;       // 3 – 5px
+    nodes.push({
+      lbl: '',                            // no label
+      c: TEAM_KEYS[Math.floor(srand(i, 89) * TEAM_KEYS.length)],
+      r,
+      _origR: r,
+      px: p.px, py: p.py, pz: p.pz,
+      x: 0.5 + p.px * 0.36,
+      y: 0.5 - p.py * 0.36,
+      _depth: p.pz,
+    });
+  });
+
+  const edges = nearestNeighbourEdges(nodes, 4);
+  return { nodes, edges };
+}
+const G=buildGalaxy();
+
+const STAGES=[
+  {ttl:'Basic local app',sub:'A single, self-contained node',
+   nodes:[{x:.5,y:.5,r:20,c:'purple',lbl:'App',center:true}],edges:[]},
+  {ttl:'App + API + server',sub:'Three nodes, first connections form',
+   nodes:[{x:.5,y:.5,r:14,c:'purple',lbl:'App'},{x:.63,y:.36,r:11,c:'teal',lbl:'API'},{x:.63,y:.64,r:11,c:'coral',lbl:'Server'}],
+   edges:[[0,1],[0,2],[1,2]]},
+  {ttl:'App + API + multiple services',sub:'The network branches outward',
+   nodes:[
+    {x:.44,y:.5,r:13,c:'purple',lbl:'App'},{x:.55,y:.37,r:10,c:'teal',lbl:'API'},{x:.55,y:.63,r:10,c:'coral',lbl:'Server'},
+    {x:.68,y:.27,r:8,c:'blue',lbl:'Auth'},{x:.69,y:.5,r:8,c:'blue',lbl:'DB'},{x:.68,y:.73,r:8,c:'blue',lbl:'Cache'}],
+   edges:[[0,1],[0,2],[1,2],[1,3],[1,4],[2,4],[2,5]]},
+  {ttl:'App + multiple APIs + multiple services',sub:'APIs multiply, services diversify',
+   nodes:[
+    {x:.4,y:.5,r:13,c:'purple',lbl:'App'},
+    {x:.52,y:.27,r:9,c:'teal',lbl:'API 1'},{x:.53,y:.5,r:9,c:'teal',lbl:'MCP'},{x:.52,y:.73,r:9,c:'teal',lbl:'API 2'},
+    {x:.68,y:.2,r:8,c:'blue',lbl:'Auth'},{x:.69,y:.38,r:8,c:'blue',lbl:'DB'},{x:.69,y:.62,r:8,c:'blue',lbl:'Queue'},{x:.68,y:.8,r:8,c:'blue',lbl:'Cache'}],
+   edges:[[0,1],[0,2],[0,3],[1,4],[1,5],[2,5],[2,6],[3,6],[3,7],[4,5],[6,7]]},
+  {ttl:'Multiple apps + multiple APIs + multiple services',sub:'Many apps, full mesh emerging',
+   nodes:[
+    {x:.16,y:.35,r:10,c:'purple',lbl:'App A'},{x:.16,y:.65,r:10,c:'purple',lbl:'App B'},{x:.16,y:.2,r:10,c:'purple',lbl:'App C'},
+    {x:.35,y:.27,r:9,c:'teal',lbl:'API 1'},{x:.35,y:.5,r:9,c:'teal',lbl:'MCP'},{x:.35,y:.73,r:9,c:'teal',lbl:'API 2'},
+    {x:.53,y:.18,r:7,c:'blue',lbl:'Auth'},{x:.54,y:.37,r:7,c:'blue',lbl:'DB'},{x:.54,y:.57,r:7,c:'blue',lbl:'Queue'},{x:.53,y:.76,r:7,c:'blue',lbl:'Cache'},
+    {x:.72,y:.28,r:7,c:'coral',lbl:'Logs'},{x:.72,y:.5,r:7,c:'coral',lbl:'CDN'},{x:.72,y:.72,r:7,c:'coral',lbl:'ML'}],
+   edges:[[0,3],[0,4],[1,4],[1,5],[2,3],[2,4],[3,6],[3,7],[4,7],[4,8],[5,8],[5,9],[6,10],[7,10],[7,11],[8,11],[8,12],[9,12],[3,4],[4,5],[7,8],[10,11]]},
+  {ttl:'The context graph',sub:'Everything connects. Relationships become the structure',
+   nodes:G.nodes,edges:G.edges,isGraph:true},
+];
+
+const NS=STAGES.length;
+const dotsEl=document.getElementById('dots');
+STAGES.forEach((_,i)=>{
+  const b=document.createElement('button');
+  b.className='dot'+(i===0?' on':'');
+  b.id='d'+i; b.setAttribute('aria-label','Stage '+(i+1));
+  b.onclick=()=>world.scrollTo({top:i*(12000/NS)+10,behavior:'smooth'});
+  dotsEl.appendChild(b);
+});
+
+let prevS=0, nextS=0, tval=1, pulse=0;
+let hasClickedNode=false, clickFrame=0, hasAutoOpened=false;
+const unlocked=new Array(NS).fill(false);
+unlocked[0]=true;
+
+// Sphere rotation state for the orb (final stage). rotY accumulates
+// while the orb is fully settled so it slowly spins.
+let rotY=0;
+function updateOrbProjection(){
+  const cosY=Math.cos(rotY), sinY=Math.sin(rotY);
+  STAGES[5].nodes.forEach(n=>{
+    if(n.px===undefined) return;
+    const x3=n.px*cosY + n.pz*sinY;
+    const z3=-n.px*sinY + n.pz*cosY;
+    n.x = 0.5 + x3 * 0.36;
+    // py=+1 is the top of the sphere — flip so it lands at top of canvas.
+    n.y = 0.5 - n.py * 0.36;
+    n._depth = z3;
+    // Depth-shaded radius (back smaller, front bigger).
+    const dShade = (z3 + 1) * 0.5;
+    n.r = n._origR * (0.55 + dShade * 0.6);
+  });
+}
+updateOrbProjection();
+
+function iNodes(n1,n2,t){
+  const max=Math.max(n1.length,n2.length);
+  return Array.from({length:max},(_,i)=>{
+    const hasA=!!n1[i], hasB=!!n2[i];
+    const a=hasA?n1[i]:{...n2[i],r:0,x:.5,y:.5};
+    const b=hasB?n2[i]:{...n1[i],r:0};
+    return{x:lerp(a.x,b.x,t),y:lerp(a.y,b.y,t),r:lerp(a.r,b.r,t),c:b.c||a.c,lbl:b.lbl!==undefined?b.lbl:a.lbl,center:b.center,stable:hasA&&hasB};
+  });
+}
+
+function draw(){
+  const p=pal();
+  ctx.clearRect(0,0,CW,CH);
+  ctx.fillStyle=p.bg; ctx.fillRect(0,0,CW,CH);
+
+  ctx.fillStyle=p.dot;
+  for(let x=12;x<CW;x+=24)
+    for(let y=12;y<CH;y+=24){ctx.beginPath();ctx.arc(x,y,0.9,0,Math.PI*2);ctx.fill();}
+
+  const e=eio(clamp(tval,0,1));
+  const settled=tval>=.99;
+  const sA=STAGES[prevS], sB=STAGES[nextS];
+
+  if(settled) unlocked[nextS]=true;
+
+  const showLbl=unlocked[nextS]&&settled || (unlocked[prevS]&&!settled);
+
+  const nodes=settled?sB.nodes:iNodes(sA.nodes,sB.nodes,e);
+  const edges=(e<.5?sA:sB).edges;
+  const isG=sB.isGraph&&settled;
+
+  ctx.strokeStyle=p.edge; ctx.lineWidth=.8;
+  edges.forEach(([a,b])=>{
+    const na=nodes[a],nb=nodes[b];
+    if(!na||!nb)return;
+    ctx.beginPath();ctx.moveTo(na.x*CW,na.y*CH);ctx.lineTo(nb.x*CW,nb.y*CH);ctx.stroke();
+  });
+
+  const displayNodes=settled?sB.nodes:nodes;
+  displayNodes.forEach(n=>{
+    const x=n.x*CW, y=n.y*CH;
+    const col=p.cols[n.c]||p.cols.gray;
+    if(n.center&&isG){
+      const pT=pulse*.04;
+      // Whichever node is the active selection pulses indefinitely.
+      const rip=(pulse%90)/90;
+      ctx.save();
+      ctx.globalAlpha=(1-rip)*.5;
+      ctx.beginPath();ctx.arc(x,y,n.r+4+rip*22,0,Math.PI*2);
+      ctx.strokeStyle='#5B6EEA';ctx.lineWidth=1.4;ctx.stroke();
+      ctx.restore();
+      // Soft indigo glow
+      const ps=.5+.5*Math.sin(pT);
+      ctx.save();
+      ctx.globalAlpha=.18+.22*ps;
+      ctx.beginPath();ctx.arc(x,y,n.r+8+6*ps,0,Math.PI*2);
+      ctx.fillStyle='#5B6EEA';ctx.fill();
+      ctx.restore();
+      // Inner halo in node's own color
+      ctx.save();
+      ctx.globalAlpha=.35+.15*ps;
+      ctx.beginPath();ctx.arc(x,y,n.r+3+2*ps,0,Math.PI*2);
+      ctx.fillStyle=col.f;ctx.fill();
+      ctx.restore();
+    }
+    ctx.beginPath();ctx.arc(x,y,Math.max(.5,n.r),0,Math.PI*2);
+    ctx.fillStyle=col.f;ctx.fill();
+    ctx.strokeStyle=col.s;ctx.lineWidth=n.center?1.6:.9;ctx.stroke();
+    if(n.lbl&&showLbl&&n.r>=4&&(settled||n.stable!==false)){
+      const fs=n.center?11:9.5;
+      ctx.font=`${n.center?'600':'500'} ${fs}px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='top';
+      ctx.fillStyle=n.center?'#111':p.lbl;
+      ctx.fillText(n.lbl,x,y+n.r+3);
+    }
+  });
+}
+
+function tick(){
+  pulse++;
+  // Orb does not rotate — bifrost-gateway stays pinned at top.
+  updateOrbProjection();
+  draw();
+  requestAnimationFrame(tick);
+}
+tick();
+
+// Static version: skip the scroll-driven build. Lock the view to the
+// final stage (index NS-1) with full title shown and bifrost detail
+// panel open by default.
+prevS = nextS = NS - 1;
+tval = 1;
+document.getElementById('ttl').textContent = STAGES[NS-1].ttl;
+const bifrostIdx = STAGES[NS-1].nodes.findIndex(n=>n.lbl==='bifrost-gateway');
+if(bifrostIdx >= 0 && typeof openDetail === 'function'){
+  openDetail(bifrostIdx);
+  hasClickedNode = true;
+  clickFrame = pulse;
+}
+
+window.addEventListener('resize',()=>{
+  setCanvasSize();
+  const G2=buildGalaxy();
+  STAGES[5].nodes=G2.nodes;
+  STAGES[5].edges=G2.edges;
+});
+
+// ── Node click → detail panel ─────────────────────────────────────────
+const NODE_META = {
+  // Stage 1–5 colors
+  purple: {type:'Service',  team:{name:'App',       color:'#534ab7'}, sources:['GitHub','Kubernetes','Jira','Postman']},
+  teal:   {type:'Service',  team:{name:'API',       color:'#0f6e56'}, sources:['GitHub','Postman','Kubernetes','Jira']},
+  coral:  {type:'Service',  team:{name:'Platform',  color:'#993c1d'}, sources:['GitHub','Kubernetes','Postman']},
+  blue:   {type:'Service',  team:{name:'Infra',     color:'#185fa5'}, sources:['Kubernetes','GitHub','Jira']},
+  amber:  {type:'Service',  team:{name:'Observability', color:'#854f0b'}, sources:['Datadog','Kubernetes','GitHub']},
+  pink:   {type:'Service',  team:{name:'Security',  color:'#993556'}, sources:['Vault','GitHub','Postman']},
+  gray:   {type:'Service',  team:{name:'Networking',color:'#5f5e5a'}, sources:['Kubernetes','Consul']},
+  green:  {type:'Service',  team:{name:'Mesh',      color:'#3b6d11'}, sources:['Kubernetes','Consul','GitHub']},
+  // Postman team colors (final stage)
+  platform:{type:'Service', team:{name:'Platform', color:'#4F7FE8'}, sources:['GitHub','Kubernetes','Jira','Postman']},
+  core:    {type:'Service', team:{name:'Core',     color:'#10B981'}, sources:['GitHub','Postman','Kubernetes','Jira']},
+  catalog: {type:'Service', team:{name:'Catalog',  color:'#F97316'}, sources:['GitHub','Postman','Kubernetes']},
+  payments:{type:'Service', team:{name:'Payments', color:'#EC4899'}, sources:['GitHub','Vault','Postman']},
+  testing: {type:'Service', team:{name:'Testing',  color:'#8B5CF6'}, sources:['GitHub','Datadog','Postman']},
+  flows:   {type:'Service', team:{name:'Flows',    color:'#06B6D4'}, sources:['GitHub','Postman','Kubernetes']},
+  data:    {type:'Service', team:{name:'Data',     color:'#F59E0B'}, sources:['GitHub','Datadog']},
+};
+function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+function hashCode(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return Math.abs(h)}
+function endpointsFor(lbl){
+  const slug=slugify(lbl).replace(/-service$/, '');
+  const methods=['GET','GET','POST','PUT','DELETE'];
+  return methods.map((m,i)=>`${m} /${slug}${m==='GET'&&i===0?'':'/'+i}`);
+}
+const REL_COLORS = {
+  EXPOSES:     {bg:'#fef3e2', fg:'#c87a48'},
+  DEPENDS_ON:  {bg:'#e8f7ee', fg:'#3b8c5e'},
+  DEPLOYS:     {bg:'#e6f1fb', fg:'#3b6db5'},
+  OWNS:        {bg:'#fbeaf0', fg:'#a35975'},
+};
+const DEPLOY_ENVS = ['prod-us', 'prod-eu', 'staging'];
+function serviceName(lbl){
+  const s = slugify(lbl);
+  return /service$/.test(s) ? s : s + '-service';
+}
+function relationsFor(nodeIdx, n){
+  const edges = STAGES[5].edges;
+  const nodes = STAGES[5].nodes;
+  const connected = [];
+  edges.forEach(e => {
+    if (e[0] === nodeIdx) connected.push(e[1]);
+    else if (e[1] === nodeIdx) connected.push(e[0]);
+  });
+  const uniq = [...new Set(connected)].filter(i => nodes[i] && i !== nodeIdx);
+  const h = hashCode(n.lbl);
+  const out = [];
+  // 2–3 DEPENDS_ON pointing at neighbouring services
+  const depsTake = Math.min(3, uniq.length);
+  for (let i = 0; i < depsTake; i++){
+    out.push({type:'DEPENDS_ON', target: serviceName(nodes[uniq[i]].lbl)});
+  }
+  // 1 DEPLOYS to an environment
+  out.push({type:'DEPLOYS', target: DEPLOY_ENVS[h % DEPLOY_ENVS.length]});
+  // 1–2 EXPOSES endpoints (skip for the very-dependency-heavy center)
+  const slug = slugify(n.lbl).replace(/-service$/, '');
+  if (!n.center){
+    out.push({type:'EXPOSES', target: `GET /${slug}`});
+    if ((h % 2) === 0) out.push({type:'EXPOSES', target: `POST /${slug}`});
+  }
+  return out;
+}
+function statsFor(lbl, isCenter){
+  const h=hashCode(lbl);
+  const eps = isCenter ? 142 : 12 + (h%48);
+  const deps = isCenter ? 24 : 2 + (h%9);
+  const cons = isCenter ? 18 : 1 + (h%6);
+  return [eps,deps,cons];
+}
+
+const nd = document.getElementById('nd');
+document.getElementById('nd-close').addEventListener('click', () => {
+  nd.classList.remove('open');
+  document.querySelector('.demo-layout').classList.remove('locked');
+});
+
+function openDetail(nodeIdx){
+  const n = STAGES[5].nodes[nodeIdx];
+  if(!n) return;
+  window.__lastNodeIdx = nodeIdx;
+  const meta = NODE_META[n.c] || NODE_META.gray;
+  // Type badge
+  const typeEl = document.getElementById('nd-type');
+  typeEl.textContent = meta.type;
+  const colMap = { purple:'#534ab7', teal:'#0f6e56', coral:'#993c1d', blue:'#185fa5', amber:'#854f0b', pink:'#993556', gray:'#5f5e5a', green:'#3b6d11', platform:'#4F7FE8', core:'#10B981', catalog:'#F97316', payments:'#EC4899', testing:'#8B5CF6', flows:'#06B6D4', data:'#F59E0B' };
+  const cc = colMap[n.c] || '#888';
+  typeEl.style.background = cc + '22';
+  typeEl.style.color = cc;
+  // Team badge
+  const teamEl = document.getElementById('nd-team');
+  teamEl.textContent = meta.team.name + ' team';
+  teamEl.style.background = meta.team.color + '20';
+  teamEl.style.color = meta.team.color;
+  // Name
+  const slug = slugify(n.lbl);
+  document.getElementById('nd-name').textContent = /service$/.test(slug) ? slug : slug + '-service';
+  // Stats
+  const [eps,deps,cons] = statsFor(n.lbl, !!n.center);
+  document.getElementById('nd-stats').innerHTML = `
+    <div class="nd-stat"><b>${eps}</b><span>endpoints</span></div>
+    <div class="nd-stat"><b>${deps}</b><span>deps</span></div>
+    <div class="nd-stat"><b>${cons}</b><span>contributors</span></div>`;
+  // Relationships: mixed DEPENDS_ON / DEPLOYS / EXPOSES
+  document.getElementById('nd-rels').innerHTML = relationsFor(nodeIdx, n).map(rel => {
+    const c = REL_COLORS[rel.type];
+    return `<div class="nd-rel">
+      <span class="nd-rtype" style="background:${c.bg};color:${c.fg}">${rel.type}</span>
+      <span style="color:#555">→</span>
+      <span class="nd-rtgt">${rel.target}</span>
+    </div>`;
+  }).join('');
+  // Data sources
+  document.getElementById('nd-sources').innerHTML = meta.sources.map(s => `<span class="nd-src">${s}</span>`).join('');
+
+  nd.classList.add('open');
+}
+
+function nodeAtCanvasPoint(cx, cy){
+  if (!(nextS === NS-1 && tval >= .99)) return -1;
+  const nodes = STAGES[5].nodes;
+  for (let i = 0; i < nodes.length; i++){
+    const n = nodes[i];
+    if (n.cat === 'endpoint') continue; // tiny satellites aren't click targets
+    if (n.center) continue; // central node has no hover/click after the build
+    const x = n.x*CW, y = n.y*CH;
+    const dx = cx-x, dy = cy-y;
+    const hit = Math.max(n.r + 3, 8);
+    if (dx*dx + dy*dy <= hit*hit) return i;
+  }
+  return -1;
+}
+
+function canvasCoords(ev){
+  const r = canvas.getBoundingClientRect();
+  return { x: (ev.clientX - r.left) * (CW / r.width),
+           y: (ev.clientY - r.top)  * (CH / r.height) };
+}
+
+canvas.addEventListener('click', ev => {
+  const {x,y} = canvasCoords(ev);
+  const idx = nodeAtCanvasPoint(x,y);
+  if (idx >= 0) {
+    // Move the pulse-highlight to whichever node was clicked.
+    STAGES[5].nodes.forEach((n, i) => { n.center = (i === idx); });
+    openDetail(idx);
+    if (!hasClickedNode) { hasClickedNode = true; clickFrame = pulse; }
+    document.querySelector('.demo-layout').classList.add('locked');
+  }
+});
+
+canvas.addEventListener('mousemove', ev => {
+  const {x,y} = canvasCoords(ev);
+  canvas.style.cursor = nodeAtCanvasPoint(x,y) >= 0 ? 'pointer' : '';
+});
+
+// Show "click any node" hint when settled on final stage; hide otherwise
+const clickHint = document.getElementById('click-hint');
+setInterval(() => {
+  const onFinal = nextS === NS-1 && tval >= .99;
+  clickHint.classList.toggle('show', onFinal && !nd.classList.contains('open'));
+}, 200);
+
+</script>
+</body>
+</html>
