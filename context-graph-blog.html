@@ -414,7 +414,7 @@ function buildGalaxy(){
     _origR: m.r,
     // Initial 2D projection (no rotation) — updated each frame.
     x: 0.5 + sphere[i].px * 0.36,
-    y: 0.5 + sphere[i].py * 0.36,
+    y: 0.5 - sphere[i].py * 0.36,
     _depth: sphere[i].pz,
   }));
   // Promote bifrost-gateway visually so the center "anchor" still reads
@@ -478,7 +478,8 @@ function updateOrbProjection(){
     const x3=n.px*cosY + n.pz*sinY;
     const z3=-n.px*sinY + n.pz*cosY;
     n.x = 0.5 + x3 * 0.36;
-    n.y = 0.5 + n.py * 0.36;
+    // py=+1 is the top of the sphere — flip so it lands at top of canvas.
+    n.y = 0.5 - n.py * 0.36;
     n._depth = z3;
     // Depth-shaded radius (back smaller, front bigger).
     const dShade = (z3 + 1) * 0.5;
@@ -568,11 +569,7 @@ function draw(){
 
 function tick(){
   pulse++;
-  // Slowly rotate the orb whenever it's the active stage. Pause while
-  // morphing in/out so the morph target doesn't drift.
-  if(nextS===5 && tval>=0.95){
-    rotY += 0.0025;
-  }
+  // Orb does not rotate — bifrost-gateway stays pinned at top.
   updateOrbProjection();
   draw();
   requestAnimationFrame(tick);
