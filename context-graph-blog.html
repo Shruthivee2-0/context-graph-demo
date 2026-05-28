@@ -412,14 +412,37 @@ function buildGalaxy(){
     ...m,
     px: sphere[i].px, py: sphere[i].py, pz: sphere[i].pz,
     _origR: m.r,
-    // Initial 2D projection (no rotation) — updated each frame.
     x: 0.5 + sphere[i].px * 0.36,
     y: 0.5 - sphere[i].py * 0.36,
     _depth: sphere[i].pz,
   }));
-  // Promote bifrost-gateway visually so the center "anchor" still reads
-  // as the primary even when sitting on the sphere surface.
-  nodes[0].center = true;
+
+  // Swap label metadata between sphere positions to control which
+  // services sit where on the orb. Positions (px/py/pz/x/y/_depth)
+  // stay anchored to each index — only label / color / size move.
+  const swapMeta = (a, b) => {
+    const fields = ['lbl', 'c', '_origR'];
+    for(const f of fields){ const t = nodes[a][f]; nodes[a][f] = nodes[b][f]; nodes[b][f] = t; }
+    nodes[a].r = nodes[a]._origR;
+    nodes[b].r = nodes[b]._origR;
+  };
+
+  // bifrost-gateway → front-centre of the orb (i=19, near (0.48, 0.46))
+  swapMeta(0, 19);
+
+  // Named primary services pulled into the lower-right quadrant:
+  // i=24 (0.68, 0.54), i=26 (0.82, 0.58), i=29 (0.80, 0.63),
+  // i=31 (0.67, 0.66), i=34 (0.79, 0.71), i=37 (0.67, 0.76)
+  swapMeta(1, 24);   // api-catalog-service
+  swapMeta(2, 26);   // payment-service
+  swapMeta(5, 29);   // workspace-service
+  swapMeta(6, 31);   // collection-service
+  swapMeta(7, 34);   // monitor-service
+  swapMeta(9, 37);   // insights-service
+
+  // bifrost is now at index 19 — mark it as the visual centre anchor.
+  nodes[19].center = true;
+
   const edges = nearestNeighbourEdges(nodes, 4);
   return { nodes, edges };
 }
