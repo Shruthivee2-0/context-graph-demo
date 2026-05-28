@@ -315,73 +315,113 @@ function ringPts(n,R,off){
   });
 }
 
-// ── Postman context graph: real service names + team colors, arranged in
-// concentric rings (1 center + 9 inner + 15 middle + 19 outer = 44 nodes).
+// Evenly distributed points on a unit sphere (Fibonacci spiral).
+function fibonacciSphere(n){
+  const pts=[];
+  const phi=Math.PI*(3-Math.sqrt(5));
+  for(let i=0;i<n;i++){
+    const y=1-(i/(n-1))*2;
+    const radius=Math.sqrt(1-y*y);
+    const theta=phi*i;
+    pts.push({px:Math.cos(theta)*radius, py:y, pz:Math.sin(theta)*radius});
+  }
+  return pts;
+}
+
+// Connect each node to its K nearest 3D neighbours.
+function nearestNeighbourEdges(nodes,K){
+  const edges=[];
+  const seen=new Set();
+  for(let i=0;i<nodes.length;i++){
+    if(nodes[i].px===undefined) continue;
+    const d=[];
+    for(let j=0;j<nodes.length;j++){
+      if(j===i||nodes[j].px===undefined) continue;
+      const dx=nodes[i].px-nodes[j].px;
+      const dy=nodes[i].py-nodes[j].py;
+      const dz=nodes[i].pz-nodes[j].pz;
+      d.push([j,dx*dx+dy*dy+dz*dz]);
+    }
+    d.sort((a,b)=>a[1]-b[1]);
+    for(let k=0;k<K&&k<d.length;k++){
+      const j=d[k][0];
+      const key=i<j?`${i}-${j}`:`${j}-${i}`;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      edges.push([i,j]);
+    }
+  }
+  return edges;
+}
+
+// ── Postman context graph: 44 nodes positioned on a Fibonacci sphere
+// (replaces the old 1+9+15+19 concentric-ring layout). Each node still
+// carries its Postman team colour, service label, and base radius — the
+// sphere is rendered with depth shading and slow Y-axis rotation when
+// fully settled.
+const ORB_META = [
+  {lbl:'bifrost-gateway',    c:'platform', r:14},
+  {lbl:'api-catalog-service',c:'catalog',  r:12},
+  {lbl:'payment-service',    c:'payments', r:11},
+  {lbl:'auth-service',       c:'platform', r:12},
+  {lbl:'user-service',       c:'platform', r:11},
+  {lbl:'workspace-service',  c:'core',     r:13},
+  {lbl:'collection-service', c:'core',     r:11},
+  {lbl:'monitor-service',    c:'testing',  r:11},
+  {lbl:'flows-service',      c:'flows',    r:10},
+  {lbl:'insights-service',   c:'data',     r:10},
+  {lbl:'GET /catalog',       c:'catalog',  r:7},
+  {lbl:'POST /payments',     c:'payments', r:7},
+  {lbl:'GET /tokens',        c:'platform', r:7},
+  {lbl:'GET /users',         c:'platform', r:7},
+  {lbl:'GET /workspaces',    c:'core',     r:7},
+  {lbl:'POST /collections',  c:'core',     r:7},
+  {lbl:'GET /monitors',      c:'testing',  r:7},
+  {lbl:'POST /flows',        c:'flows',    r:7},
+  {lbl:'GET /insights',      c:'data',     r:7},
+  {lbl:'auth-tokens',        c:'platform', r:6},
+  {lbl:'payment-vault',      c:'payments', r:6},
+  {lbl:'workspace-cache',    c:'core',     r:6},
+  {lbl:'test-runner',        c:'testing',  r:6},
+  {lbl:'metrics-collector',  c:'data',     r:6},
+  {lbl:'flows-storage',      c:'flows',    r:6},
+  {lbl:'OAuth',              c:'platform', r:6},
+  {lbl:'LDAP',               c:'platform', r:6},
+  {lbl:'Postgres',           c:'core',     r:6},
+  {lbl:'Redis',              c:'core',     r:6},
+  {lbl:'Kafka',              c:'data',     r:6},
+  {lbl:'S3',                 c:'core',     r:6},
+  {lbl:'Lambda',             c:'flows',    r:6},
+  {lbl:'MCP Tools',          c:'catalog',  r:6},
+  {lbl:'gRPC',               c:'platform', r:6},
+  {lbl:'MCP Client',         c:'testing',  r:6},
+  {lbl:'MCP Server',         c:'data',     r:7},
+  {lbl:'Pubsub',             c:'flows',    r:6},
+  {lbl:'Traefik',             c:'platform', r:5},
+  {lbl:'K8s',                c:'platform', r:6},
+  {lbl:'Consul',             c:'platform', r:5},
+  {lbl:'Datadog',            c:'data',     r:5},
+  {lbl:'Envoy',              c:'platform', r:5},
+  {lbl:'Vault',              c:'payments', r:5},
+  {lbl:'NATS',               c:'flows',    r:5},
+];
+
 function buildGalaxy(){
-  const r1=58,r2=115,r3=172;
-  const i9=ringPts(9,r1), m15=ringPts(15,r2,Math.PI/15), o19=ringPts(19,r3,Math.PI/19);
-  const nodes=[
-    // Center - the gateway
-    {lbl:'bifrost-gateway', c:'platform', r:18, x:.5, y:.5, center:true},
-
-    // Inner ring - 9 core services
-    {lbl:'api-catalog-service', c:'catalog',  r:12, ...i9[0]},
-    {lbl:'payment-service',     c:'payments', r:11, ...i9[1]},
-    {lbl:'auth-service',        c:'platform', r:12, ...i9[2]},
-    {lbl:'user-service',        c:'platform', r:11, ...i9[3]},
-    {lbl:'workspace-service',   c:'core',     r:13, ...i9[4]},
-    {lbl:'collection-service',  c:'core',     r:11, ...i9[5]},
-    {lbl:'monitor-service',     c:'testing',  r:11, ...i9[6]},
-    {lbl:'flows-service',       c:'flows',    r:10, ...i9[7]},
-    {lbl:'insights-service',    c:'data',     r:10, ...i9[8]},
-
-    // Middle ring - 15 endpoints / sub-services
-    {lbl:'GET /catalog',     c:'catalog',  r:7, ...m15[0]},
-    {lbl:'POST /payments',   c:'payments', r:7, ...m15[1]},
-    {lbl:'GET /tokens',      c:'platform', r:7, ...m15[2]},
-    {lbl:'GET /users',       c:'platform', r:7, ...m15[3]},
-    {lbl:'GET /workspaces',  c:'core',     r:7, ...m15[4]},
-    {lbl:'POST /collections',c:'core',     r:7, ...m15[5]},
-    {lbl:'GET /monitors',    c:'testing',  r:7, ...m15[6]},
-    {lbl:'POST /flows',      c:'flows',    r:7, ...m15[7]},
-    {lbl:'GET /insights',    c:'data',     r:7, ...m15[8]},
-    {lbl:'auth-tokens',      c:'platform', r:6, ...m15[9]},
-    {lbl:'payment-vault',    c:'payments', r:6, ...m15[10]},
-    {lbl:'workspace-cache',  c:'core',     r:6, ...m15[11]},
-    {lbl:'test-runner',      c:'testing',  r:6, ...m15[12]},
-    {lbl:'metrics-collector',c:'data',     r:6, ...m15[13]},
-    {lbl:'flows-storage',    c:'flows',    r:6, ...m15[14]},
-
-    // Outer ring - 19 dependencies / infrastructure
-    {lbl:'OAuth',     c:'platform', r:6, ...o19[0]},
-    {lbl:'LDAP',      c:'platform', r:6, ...o19[1]},
-    {lbl:'Postgres',  c:'core',     r:6, ...o19[2]},
-    {lbl:'Redis',     c:'core',     r:6, ...o19[3]},
-    {lbl:'Kafka',     c:'data',     r:6, ...o19[4]},
-    {lbl:'S3',        c:'core',     r:6, ...o19[5]},
-    {lbl:'Lambda',    c:'flows',    r:6, ...o19[6]},
-    {lbl:'MCP Tools', c:'catalog',  r:6, ...o19[7]},
-    {lbl:'gRPC',      c:'platform', r:6, ...o19[8]},
-    {lbl:'MCP Client',c:'testing',  r:6, ...o19[9]},
-    {lbl:'MCP Server',c:'data',     r:7, ...o19[10]},
-    {lbl:'Pubsub',    c:'flows',    r:6, ...o19[11]},
-    {lbl:'Traefik',   c:'platform', r:5, ...o19[12]},
-    {lbl:'K8s',       c:'platform', r:6, ...o19[13]},
-    {lbl:'Consul',    c:'platform', r:5, ...o19[14]},
-    {lbl:'Datadog',   c:'data',     r:5, ...o19[15]},
-    {lbl:'Envoy',     c:'platform', r:5, ...o19[16]},
-    {lbl:'Vault',     c:'payments', r:5, ...o19[17]},
-    {lbl:'NATS',      c:'flows',    r:5, ...o19[18]},
-  ];
-  const N=nodes.length, edges=[];
-  for(let i=1;i<N;i++) edges.push([0,i]);
-  for(let i=1;i<=9;i++) edges.push([i,(i%9)+1]);
-  for(let i=10;i<25;i++) edges.push([i,10+(i-10+1)%15]);
-  for(let i=25;i<N;i++) edges.push([i,25+(i-25+1)%(N-25)]);
-  [[1,10],[2,11],[3,12],[4,13],[5,14],[6,15],[7,16],[8,17],[9,10],
-   [10,25],[11,26],[12,27],[13,28],[14,29],[15,30],[16,31],[17,32]
-  ].forEach(e=>{if(e[0]<N&&e[1]<N)edges.push(e);});
-  return{nodes,edges};
+  const sphere = fibonacciSphere(ORB_META.length);
+  const nodes = ORB_META.map((m, i) => ({
+    ...m,
+    px: sphere[i].px, py: sphere[i].py, pz: sphere[i].pz,
+    _origR: m.r,
+    // Initial 2D projection (no rotation) — updated each frame.
+    x: 0.5 + sphere[i].px * 0.36,
+    y: 0.5 + sphere[i].py * 0.36,
+    _depth: sphere[i].pz,
+  }));
+  // Promote bifrost-gateway visually so the center "anchor" still reads
+  // as the primary even when sitting on the sphere surface.
+  nodes[0].center = true;
+  const edges = nearestNeighbourEdges(nodes, 4);
+  return { nodes, edges };
 }
 const G=buildGalaxy();
 
@@ -427,6 +467,25 @@ let prevS=0, nextS=0, tval=1, pulse=0;
 let hasClickedNode=false, clickFrame=0, hasAutoOpened=false;
 const unlocked=new Array(NS).fill(false);
 unlocked[0]=true;
+
+// Sphere rotation state for the orb (final stage). rotY accumulates
+// while the orb is fully settled so it slowly spins.
+let rotY=0;
+function updateOrbProjection(){
+  const cosY=Math.cos(rotY), sinY=Math.sin(rotY);
+  STAGES[5].nodes.forEach(n=>{
+    if(n.px===undefined) return;
+    const x3=n.px*cosY + n.pz*sinY;
+    const z3=-n.px*sinY + n.pz*cosY;
+    n.x = 0.5 + x3 * 0.36;
+    n.y = 0.5 + n.py * 0.36;
+    n._depth = z3;
+    // Depth-shaded radius (back smaller, front bigger).
+    const dShade = (z3 + 1) * 0.5;
+    n.r = n._origR * (0.55 + dShade * 0.6);
+  });
+}
+updateOrbProjection();
 
 function iNodes(n1,n2,t){
   const max=Math.max(n1.length,n2.length);
@@ -507,7 +566,17 @@ function draw(){
   });
 }
 
-function tick(){pulse++;draw();requestAnimationFrame(tick);}
+function tick(){
+  pulse++;
+  // Slowly rotate the orb whenever it's the active stage. Pause while
+  // morphing in/out so the morph target doesn't drift.
+  if(nextS===5 && tval>=0.95){
+    rotY += 0.0025;
+  }
+  updateOrbProjection();
+  draw();
+  requestAnimationFrame(tick);
+}
 tick();
 
 let lastStage=-1;
