@@ -360,6 +360,7 @@ function nearestNeighbourEdges(nodes,K){
 // sphere is rendered with depth shading and slow Y-axis rotation when
 // fully settled.
 const ORB_META = [
+  // 10 primary named services — full names preserved
   {lbl:'bifrost-gateway',    c:'platform', r:14},
   {lbl:'api-catalog-service',c:'catalog',  r:12},
   {lbl:'payment-service',    c:'payments', r:11},
@@ -370,40 +371,44 @@ const ORB_META = [
   {lbl:'monitor-service',    c:'testing',  r:11},
   {lbl:'flows-service',      c:'flows',    r:10},
   {lbl:'insights-service',   c:'data',     r:10},
-  {lbl:'GET /catalog',       c:'catalog',  r:7},
-  {lbl:'POST /payments',     c:'payments', r:7},
-  {lbl:'GET /tokens',        c:'platform', r:7},
-  {lbl:'GET /users',         c:'platform', r:7},
-  {lbl:'GET /workspaces',    c:'core',     r:7},
-  {lbl:'POST /collections',  c:'core',     r:7},
-  {lbl:'GET /monitors',      c:'testing',  r:7},
-  {lbl:'POST /flows',        c:'flows',    r:7},
-  {lbl:'GET /insights',      c:'data',     r:7},
-  {lbl:'auth-tokens',        c:'platform', r:6},
-  {lbl:'payment-vault',      c:'payments', r:6},
-  {lbl:'workspace-cache',    c:'core',     r:6},
-  {lbl:'test-runner',        c:'testing',  r:6},
-  {lbl:'metrics-collector',  c:'data',     r:6},
-  {lbl:'flows-storage',      c:'flows',    r:6},
-  {lbl:'OAuth',              c:'platform', r:6},
-  {lbl:'LDAP',               c:'platform', r:6},
-  {lbl:'Postgres',           c:'core',     r:6},
-  {lbl:'Redis',              c:'core',     r:6},
-  {lbl:'Kafka',              c:'data',     r:6},
-  {lbl:'S3',                 c:'core',     r:6},
-  {lbl:'Lambda',             c:'flows',    r:6},
-  {lbl:'MCP Tools',          c:'catalog',  r:6},
-  {lbl:'gRPC',               c:'platform', r:6},
-  {lbl:'MCP Client',         c:'testing',  r:6},
-  {lbl:'MCP Server',         c:'data',     r:7},
-  {lbl:'Pubsub',             c:'flows',    r:6},
-  {lbl:'Traefik',             c:'platform', r:5},
-  {lbl:'K8s',                c:'platform', r:6},
-  {lbl:'Consul',             c:'platform', r:5},
-  {lbl:'Datadog',            c:'data',     r:5},
-  {lbl:'Envoy',              c:'platform', r:5},
-  {lbl:'Vault',              c:'payments', r:5},
-  {lbl:'NATS',               c:'flows',    r:5},
+  // Everything else collapses into three short labels: API / MCP / DB.
+  // 9 endpoint nodes (was GET /catalog, POST /payments, …)
+  {lbl:'API', c:'catalog',  r:7},
+  {lbl:'API', c:'payments', r:7},
+  {lbl:'API', c:'platform', r:7},
+  {lbl:'API', c:'platform', r:7},
+  {lbl:'API', c:'core',     r:7},
+  {lbl:'API', c:'core',     r:7},
+  {lbl:'API', c:'testing',  r:7},
+  {lbl:'API', c:'flows',    r:7},
+  {lbl:'API', c:'data',     r:7},
+  // 6 middle-ring stores / runners
+  {lbl:'DB',  c:'platform', r:6},   // was auth-tokens
+  {lbl:'DB',  c:'payments', r:6},   // was payment-vault
+  {lbl:'DB',  c:'core',     r:6},   // was workspace-cache
+  {lbl:'API', c:'testing',  r:6},   // was test-runner
+  {lbl:'API', c:'data',     r:6},   // was metrics-collector
+  {lbl:'DB',  c:'flows',    r:6},   // was flows-storage
+  // 19 outer-ring infrastructure
+  {lbl:'API', c:'platform', r:6},   // was OAuth
+  {lbl:'API', c:'platform', r:6},   // was LDAP
+  {lbl:'DB',  c:'core',     r:6},   // was Postgres
+  {lbl:'DB',  c:'core',     r:6},   // was Redis
+  {lbl:'DB',  c:'data',     r:6},   // was Kafka
+  {lbl:'DB',  c:'core',     r:6},   // was S3
+  {lbl:'API', c:'flows',    r:6},   // was Lambda
+  {lbl:'MCP', c:'catalog',  r:6},   // was MCP Tools
+  {lbl:'API', c:'platform', r:6},   // was gRPC
+  {lbl:'MCP', c:'testing',  r:6},   // was MCP Client
+  {lbl:'MCP', c:'data',     r:7},   // was MCP Server
+  {lbl:'API', c:'flows',    r:6},   // was Pubsub
+  {lbl:'API', c:'platform', r:5},   // was Traefik
+  {lbl:'API', c:'platform', r:6},   // was K8s
+  {lbl:'API', c:'platform', r:5},   // was Consul
+  {lbl:'API', c:'data',     r:5},   // was Datadog
+  {lbl:'API', c:'platform', r:5},   // was Envoy
+  {lbl:'DB',  c:'payments', r:5},   // was Vault
+  {lbl:'API', c:'flows',    r:5},   // was NATS
 ];
 
 function buildGalaxy(){
@@ -580,7 +585,7 @@ function draw(){
     ctx.beginPath();ctx.arc(x,y,Math.max(.5,n.r),0,Math.PI*2);
     ctx.fillStyle=col.f;ctx.fill();
     ctx.strokeStyle=col.s;ctx.lineWidth=n.center?1.6:.9;ctx.stroke();
-    if(n.lbl&&showLbl&&n.r>=6&&(settled||n.stable!==false)){
+    if(n.lbl&&showLbl&&n.r>=4&&(settled||n.stable!==false)){
       const fs=n.center?11:9.5;
       ctx.font=`${n.center?'600':'500'} ${fs}px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif`;
       ctx.textAlign='center';ctx.textBaseline='top';
