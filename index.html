@@ -23,6 +23,11 @@
   a.card h2{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:-0.01em}
   a.card p{font-size:13px;color:#666;line-height:1.55}
   a.card .embed{margin-top:14px;font-size:11px;color:#888;font-family:ui-monospace,Menlo,monospace;background:#f5f5f7;border:1px solid #ececf0;border-radius:6px;padding:6px 8px;word-break:break-all}
+  .downloads{margin-top:36px;padding:20px 22px;border:1px dashed #d4d4d9;border-radius:12px;background:#fff}
+  .downloads h3{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .downloads p{font-size:13px;color:#666;margin-bottom:12px}
+  .downloads a.dl{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#5B6EEA;text-decoration:none;background:#eeedfe;padding:8px 14px;border-radius:8px;transition:background .15s}
+  .downloads a.dl:hover{background:#e2e0fc}
   .grid-small{grid-template-columns:1fr 1fr 1fr;gap:12px}
   @media (max-width:640px){.grid-small{grid-template-columns:1fr}}
   .grid-small a.card{padding:16px}
@@ -54,6 +59,15 @@
       <h2>Webpage context graph</h2>
       <p>Full-page demo: scattered colored nodes converge into a 3D orb, a rounded frame draws around it, then fills to become the video container. Hero copy + CTAs on top of the canvas.</p>
       <div class="embed">https://shruthivee2-0.github.io/autonomous-engineer-demo/</div>
+    </a>
+  </div>
+
+  <div class="downloads">
+    <h3>Assets</h3>
+    <p>Static SVG of the formed orb (no selection highlight) — drop into Figma, slide decks, or any document.</p>
+    <a class="dl" href="orb.svg" download>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v9M4 7l4 4 4-4M2 14h12"/></svg>
+      Download orb.svg
     </a>
   </div>
 
