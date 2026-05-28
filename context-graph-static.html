@@ -652,17 +652,12 @@ function tick(){
 tick();
 
 // Static version: skip the scroll-driven build. Lock the view to the
-// final stage (index NS-1) with full title shown and bifrost detail
-// panel open by default.
+// final stage (index NS-1) with full title shown. The detail panel is
+// opened later (after NODE_META / REL_COLORS / nd are declared) to
+// avoid TDZ errors.
 prevS = nextS = NS - 1;
 tval = 1;
 document.getElementById('ttl').textContent = STAGES[NS-1].ttl;
-const bifrostIdx = STAGES[NS-1].nodes.findIndex(n=>n.lbl==='bifrost-gateway');
-if(bifrostIdx >= 0 && typeof openDetail === 'function'){
-  openDetail(bifrostIdx);
-  hasClickedNode = true;
-  clickFrame = pulse;
-}
 
 window.addEventListener('resize',()=>{
   setCanvasSize();
@@ -748,6 +743,17 @@ document.getElementById('nd-close').addEventListener('click', () => {
   nd.classList.remove('open');
   document.querySelector('.demo-layout').classList.remove('locked');
 });
+
+// Static mode: auto-open bifrost-gateway's detail panel after all
+// dependencies (NODE_META, REL_COLORS, nd) are declared.
+{
+  const bifrostIdx = STAGES[5].nodes.findIndex(n => n.lbl === 'bifrost-gateway');
+  if(bifrostIdx >= 0){
+    openDetail(bifrostIdx);
+    hasClickedNode = true;
+    clickFrame = pulse;
+  }
+}
 
 function openDetail(nodeIdx){
   const n = STAGES[5].nodes[nodeIdx];
