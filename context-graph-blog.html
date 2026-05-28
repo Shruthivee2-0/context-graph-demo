@@ -315,6 +315,33 @@ function ringPts(n,R,off){
   });
 }
 
+// Deterministic pseudo-random per index (stable across reloads).
+function srand(i, salt){
+  const x = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// Random points distributed inside the unit sphere (volume-uniform via
+// cube-root radius). Used to fill the orb's interior so it reads as
+// dense rather than as a hollow shell.
+function interiorPoints(n){
+  const pts = [];
+  for(let i = 0; i < n; i++){
+    const u = srand(i, 11);
+    const v = srand(i, 23);
+    const w = srand(i, 41);
+    const theta = 2 * Math.PI * u;
+    const phi = Math.acos(2 * v - 1);
+    const r = Math.cbrt(w) * 0.85;       // cube root for uniform volume; cap at 0.85
+    pts.push({
+      px: r * Math.sin(phi) * Math.cos(theta),
+      py: r * Math.cos(phi),
+      pz: r * Math.sin(phi) * Math.sin(theta),
+    });
+  }
+  return pts;
+}
+
 // Evenly distributed points on a unit sphere (Fibonacci spiral).
 function fibonacciSphere(n){
   const pts=[];
@@ -447,6 +474,25 @@ function buildGalaxy(){
 
   // bifrost is now at index 19 — mark it as the visual centre anchor.
   nodes[19].center = true;
+
+  // Add interior filler nodes so the orb feels dense (heavy) instead
+  // of looking like a hollow wireframe shell. No labels — they're
+  // pure visual mass. Small, randomly coloured across the palette.
+  const TEAM_KEYS = ['catalog','payments','platform','core','testing','flows','data'];
+  const FILLER_COUNT = 38;
+  interiorPoints(FILLER_COUNT).forEach((p, i) => {
+    const r = 3 + srand(i, 71) * 2;       // 3 – 5px
+    nodes.push({
+      lbl: '',                            // no label
+      c: TEAM_KEYS[Math.floor(srand(i, 89) * TEAM_KEYS.length)],
+      r,
+      _origR: r,
+      px: p.px, py: p.py, pz: p.pz,
+      x: 0.5 + p.px * 0.36,
+      y: 0.5 - p.py * 0.36,
+      _depth: p.pz,
+    });
+  });
 
   const edges = nearestNeighbourEdges(nodes, 4);
   return { nodes, edges };
