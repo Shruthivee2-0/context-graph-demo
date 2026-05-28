@@ -606,18 +606,17 @@ function draw(){
     const col=p.cols[n.c]||p.cols.gray;
     if(n.center&&isG){
       const pT=pulse*.04;
-      const fade=hasClickedNode?Math.max(0,1-(pulse-clickFrame)*.02):1;
-      // Expanding ripple ring (stroke) - telegraphs "click me"
+      // Whichever node is the active selection pulses indefinitely.
       const rip=(pulse%90)/90;
       ctx.save();
-      ctx.globalAlpha=(1-rip)*.5*fade;
+      ctx.globalAlpha=(1-rip)*.5;
       ctx.beginPath();ctx.arc(x,y,n.r+4+rip*22,0,Math.PI*2);
       ctx.strokeStyle='#5B6EEA';ctx.lineWidth=1.4;ctx.stroke();
       ctx.restore();
       // Soft indigo glow
       const ps=.5+.5*Math.sin(pT);
       ctx.save();
-      ctx.globalAlpha=(.18+.22*ps)*fade;
+      ctx.globalAlpha=.18+.22*ps;
       ctx.beginPath();ctx.arc(x,y,n.r+8+6*ps,0,Math.PI*2);
       ctx.fillStyle='#5B6EEA';ctx.fill();
       ctx.restore();
@@ -846,10 +845,10 @@ canvas.addEventListener('click', ev => {
   const {x,y} = canvasCoords(ev);
   const idx = nodeAtCanvasPoint(x,y);
   if (idx >= 0) {
+    // Move the pulse-highlight to whichever node was clicked.
+    STAGES[5].nodes.forEach((n, i) => { n.center = (i === idx); });
     openDetail(idx);
     if (!hasClickedNode) { hasClickedNode = true; clickFrame = pulse; }
-    // Expand the layout to show the panel (scroll remains enabled
-    // so the user can still scroll back through the animation)
     document.querySelector('.demo-layout').classList.add('locked');
   }
 });
