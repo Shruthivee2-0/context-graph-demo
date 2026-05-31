@@ -69,7 +69,7 @@
   .dot.on{background:#5B6EEA;transform:scale(1.35)}
   #hint{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-size:14px;font-weight:500;color:var(--text-3);white-space:nowrap;transition:opacity .4s;letter-spacing:.01em}
 
-  /* ── NODE DETAIL PANEL (Postman style) ── */
+  /* ── NODE DETAIL PANEL ── */
   #nd{
     width:100%;
     background:#fff; border:1px solid #e4e4e8; border-radius:12px;
@@ -169,7 +169,7 @@
           <div class="nd-sec">Data sources</div>
           <div class="nd-src-chips" id="nd-sources"></div>
           <div class="nd-actions">
-            <button class="nd-action">View in API Catalog
+            <button class="nd-action">View in Service Catalog
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 10 L10 2 M5 2 h5 v5"/></svg>
             </button>
             <button class="nd-action">View code
@@ -228,12 +228,15 @@
 
           <div class="rp-section">Add more context</div>
           <div class="rp-card">
-            <div class="rp-logo" style="background:#0052cc">
-              <svg viewBox="0 0 24 24" fill="#fff"><path d="M11.5 2.5L2.5 11.5l9 9 4.5-4.5-4.5-4.5L16 7l-4.5-4.5zm10 10L17 17l4.5 4.5 4.5-4.5h-4.5z" opacity=".4"/><path d="M11.5 2.5L2.5 11.5l4.5 4.5L11.5 11.5l4.5-4.5z"/></svg>
+            <div class="rp-logo" style="background:#00AC69">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z"/>
+                <path d="M8 8 V16 L16 8 V16"/>
+              </svg>
             </div>
             <div class="rp-meta">
-              <div class="rp-name">Jira</div>
-              <div class="rp-desc">Teams, owners &amp; maturity phases</div>
+              <div class="rp-name">New Relic</div>
+              <div class="rp-desc">Telemetry, traces &amp; service health</div>
             </div>
             <button class="rp-btn" aria-label="Connect">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
@@ -241,13 +244,6 @@
           </div>
 
           <div class="rp-section">Enrich further</div>
-          <div class="rp-row">
-            <div class="rp-row-icon" style="background:#008c99"></div>
-            <div class="rp-row-text"><strong>New Relic</strong> - Telemetry nodes to <strong>89 services</strong></div>
-            <button class="rp-row-btn" aria-label="Add">
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
-            </button>
-          </div>
           <div class="rp-row">
             <div class="rp-row-icon" style="background:#6e4ed1"></div>
             <div class="rp-row-text"><strong>Wiz</strong> - Security scans across&nbsp;<strong style="white-space:nowrap">115&nbsp;services</strong></div>
@@ -291,7 +287,7 @@ function pal(){
       pink:  {f:'#fbeaf0',s:'#D47FAE'},
       gray:  {f:'#f5f5f7',s:'#888'},
       green: {f:'#eaf3de',s:'#4CAF82'},
-      // Postman team colors (final-stage context graph)
+      // Team colors (final-stage context graph)
       platform:{f:'#dde6fa',s:'#4F7FE8'},
       core:    {f:'#cdf2e2',s:'#10B981'},
       catalog: {f:'#fde5cf',s:'#F97316'},
@@ -381,23 +377,23 @@ function nearestNeighbourEdges(nodes,K){
   return edges;
 }
 
-// ── Postman context graph: 44 nodes positioned on a Fibonacci sphere
+// ── Context graph: 44 nodes positioned on a Fibonacci sphere
 // (replaces the old 1+9+15+19 concentric-ring layout). Each node still
-// carries its Postman team colour, service label, and base radius — the
+// carries its team colour, service label, and base radius — the
 // sphere is rendered with depth shading and slow Y-axis rotation when
 // fully settled.
 const ORB_META = [
   // 10 primary named services — full names preserved
-  {lbl:'bifrost-gateway',    c:'platform', r:14},
-  {lbl:'api-catalog-service',c:'catalog',  r:12},
+  {lbl:'api-gateway',        c:'platform', r:14},
+  {lbl:'catalog-service',    c:'catalog',  r:12},
   {lbl:'payment-service',    c:'payments', r:11},
   {lbl:'auth-service',       c:'platform', r:12},
   {lbl:'user-service',       c:'platform', r:11},
-  {lbl:'workspace-service',  c:'core',     r:13},
-  {lbl:'collection-service', c:'core',     r:11},
+  {lbl:'tenant-service',     c:'core',     r:13},
+  {lbl:'document-service',   c:'core',     r:11},
   {lbl:'monitor-service',    c:'testing',  r:11},
-  {lbl:'flows-service',      c:'flows',    r:10},
-  {lbl:'insights-service',   c:'data',     r:10},
+  {lbl:'pipeline-service',   c:'flows',    r:10},
+  {lbl:'analytics-service',  c:'data',     r:10},
   // Everything else collapses into three short labels: API / MCP / DB.
   // 9 endpoint nodes (was GET /catalog, POST /payments, …)
   {lbl:'API', c:'catalog',  r:7},
@@ -459,20 +455,20 @@ function buildGalaxy(){
     nodes[b].r = nodes[b]._origR;
   };
 
-  // bifrost-gateway → front-centre of the orb (i=19, near (0.48, 0.46))
+  // api-gateway → front-centre of the orb (i=19, near (0.48, 0.46))
   swapMeta(0, 19);
 
   // Named primary services pulled into the lower-right quadrant:
   // i=24 (0.68, 0.54), i=26 (0.82, 0.58), i=29 (0.80, 0.63),
   // i=31 (0.67, 0.66), i=34 (0.79, 0.71), i=37 (0.67, 0.76)
-  swapMeta(1, 24);   // api-catalog-service
+  swapMeta(1, 24);   // catalog-service
   swapMeta(2, 26);   // payment-service
-  swapMeta(5, 29);   // workspace-service
-  swapMeta(6, 31);   // collection-service
+  swapMeta(5, 29);   // tenant-service
+  swapMeta(6, 31);   // document-service
   swapMeta(7, 34);   // monitor-service
-  swapMeta(9, 37);   // insights-service
+  swapMeta(9, 37);   // analytics-service
 
-  // bifrost is now at index 19 — mark it as the visual centre anchor.
+  // gateway is now at index 19 — mark it as the visual centre anchor.
   nodes[19].center = true;
 
   // Add interior filler nodes so the orb feels dense (heavy) instead
@@ -642,7 +638,7 @@ function draw(){
 
 function tick(){
   pulse++;
-  // Orb does not rotate — bifrost-gateway stays pinned at top.
+  // Orb does not rotate — api-gateway stays pinned at top.
   updateOrbProjection();
   draw();
   requestAnimationFrame(tick);
@@ -677,8 +673,8 @@ function onScroll(){
     const ndEl = document.getElementById('nd');
     if (ndEl && !ndEl.classList.contains('open')) {
       hasAutoOpened = true;
-      const bifrostIdx = STAGES[5].nodes.findIndex(n=>n.lbl==='bifrost-gateway');
-      openDetail(bifrostIdx>=0?bifrostIdx:0);
+      const gatewayIdx = STAGES[5].nodes.findIndex(n=>n.lbl==='api-gateway');
+      openDetail(gatewayIdx>=0?gatewayIdx:0);
       hasClickedNode = true;
       clickFrame = pulse;
       document.querySelector('.demo-layout').classList.add('locked');
@@ -704,21 +700,21 @@ window.addEventListener('resize',()=>{
 // ── Node click → detail panel ─────────────────────────────────────────
 const NODE_META = {
   // Stage 1–5 colors
-  purple: {type:'Service',  team:{name:'App',       color:'#534ab7'}, sources:['GitHub','Kubernetes','Jira','Postman']},
-  teal:   {type:'Service',  team:{name:'API',       color:'#0f6e56'}, sources:['GitHub','Postman','Kubernetes','Jira']},
-  coral:  {type:'Service',  team:{name:'Platform',  color:'#993c1d'}, sources:['GitHub','Kubernetes','Postman']},
+  purple: {type:'Service',  team:{name:'App',       color:'#534ab7'}, sources:['GitHub','Kubernetes','Jira']},
+  teal:   {type:'Service',  team:{name:'API',       color:'#0f6e56'}, sources:['GitHub','Kubernetes','Jira']},
+  coral:  {type:'Service',  team:{name:'Platform',  color:'#993c1d'}, sources:['GitHub','Kubernetes']},
   blue:   {type:'Service',  team:{name:'Infra',     color:'#185fa5'}, sources:['Kubernetes','GitHub','Jira']},
   amber:  {type:'Service',  team:{name:'Observability', color:'#854f0b'}, sources:['Datadog','Kubernetes','GitHub']},
-  pink:   {type:'Service',  team:{name:'Security',  color:'#993556'}, sources:['Vault','GitHub','Postman']},
+  pink:   {type:'Service',  team:{name:'Security',  color:'#993556'}, sources:['Vault','GitHub']},
   gray:   {type:'Service',  team:{name:'Networking',color:'#5f5e5a'}, sources:['Kubernetes','Consul']},
   green:  {type:'Service',  team:{name:'Mesh',      color:'#3b6d11'}, sources:['Kubernetes','Consul','GitHub']},
-  // Postman team colors (final stage)
-  platform:{type:'Service', team:{name:'Platform', color:'#4F7FE8'}, sources:['GitHub','Kubernetes','Jira','Postman']},
-  core:    {type:'Service', team:{name:'Core',     color:'#10B981'}, sources:['GitHub','Postman','Kubernetes','Jira']},
-  catalog: {type:'Service', team:{name:'Catalog',  color:'#F97316'}, sources:['GitHub','Postman','Kubernetes']},
-  payments:{type:'Service', team:{name:'Payments', color:'#EC4899'}, sources:['GitHub','Vault','Postman']},
-  testing: {type:'Service', team:{name:'Testing',  color:'#8B5CF6'}, sources:['GitHub','Datadog','Postman']},
-  flows:   {type:'Service', team:{name:'Flows',    color:'#06B6D4'}, sources:['GitHub','Postman','Kubernetes']},
+  // Team colors (final stage)
+  platform:{type:'Service', team:{name:'Platform', color:'#4F7FE8'}, sources:['GitHub','Kubernetes','Jira']},
+  core:    {type:'Service', team:{name:'Core',     color:'#10B981'}, sources:['GitHub','Kubernetes','Jira']},
+  catalog: {type:'Service', team:{name:'Catalog',  color:'#F97316'}, sources:['GitHub','Kubernetes']},
+  payments:{type:'Service', team:{name:'Payments', color:'#EC4899'}, sources:['GitHub','Vault']},
+  testing: {type:'Service', team:{name:'Testing',  color:'#8B5CF6'}, sources:['GitHub','Datadog']},
+  flows:   {type:'Service', team:{name:'Pipelines',color:'#06B6D4'}, sources:['GitHub','Kubernetes']},
   data:    {type:'Service', team:{name:'Data',     color:'#F59E0B'}, sources:['GitHub','Datadog']},
 };
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
