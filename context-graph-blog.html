@@ -383,16 +383,16 @@ function nearestNeighbourEdges(nodes,K){
 // sphere is rendered with depth shading and slow Y-axis rotation when
 // fully settled.
 const ORB_META = [
-  // 10 primary named services — full names preserved
+  // 10 primary named services — e-commerce domain
   {lbl:'api-gateway',        c:'platform', r:14},
-  {lbl:'catalog-service',    c:'catalog',  r:12},
-  {lbl:'payment-service',    c:'payments', r:11},
+  {lbl:'products-service',   c:'catalog',  r:12},
+  {lbl:'payments-service',   c:'payments', r:11},
   {lbl:'auth-service',       c:'platform', r:12},
-  {lbl:'user-service',       c:'platform', r:11},
-  {lbl:'tenant-service',     c:'core',     r:13},
-  {lbl:'document-service',   c:'core',     r:11},
-  {lbl:'monitor-service',    c:'testing',  r:11},
-  {lbl:'pipeline-service',   c:'flows',    r:10},
+  {lbl:'accounts-service',   c:'platform', r:11},
+  {lbl:'cart-service',       c:'core',     r:13},
+  {lbl:'orders-service',     c:'core',     r:11},
+  {lbl:'reviews-service',    c:'testing',  r:11},
+  {lbl:'inventory-service',  c:'flows',    r:10},
   {lbl:'analytics-service',  c:'data',     r:10},
   // Everything else collapses into three short labels: API / MCP / DB.
   // 9 endpoint nodes (was GET /catalog, POST /payments, …)
@@ -461,11 +461,11 @@ function buildGalaxy(){
   // Named primary services pulled into the lower-right quadrant:
   // i=24 (0.68, 0.54), i=26 (0.82, 0.58), i=29 (0.80, 0.63),
   // i=31 (0.67, 0.66), i=34 (0.79, 0.71), i=37 (0.67, 0.76)
-  swapMeta(1, 24);   // catalog-service
-  swapMeta(2, 26);   // payment-service
-  swapMeta(5, 29);   // tenant-service
-  swapMeta(6, 31);   // document-service
-  swapMeta(7, 34);   // monitor-service
+  swapMeta(1, 24);   // products-service
+  swapMeta(2, 26);   // payments-service
+  swapMeta(5, 29);   // cart-service
+  swapMeta(6, 31);   // orders-service
+  swapMeta(7, 34);   // reviews-service
   swapMeta(9, 37);   // analytics-service
 
   // gateway is now at index 19 — mark it as the visual centre anchor.
@@ -708,14 +708,14 @@ const NODE_META = {
   pink:   {type:'Service',  team:{name:'Security',  color:'#993556'}, sources:['Vault','GitHub']},
   gray:   {type:'Service',  team:{name:'Networking',color:'#5f5e5a'}, sources:['Kubernetes','Consul']},
   green:  {type:'Service',  team:{name:'Mesh',      color:'#3b6d11'}, sources:['Kubernetes','Consul','GitHub']},
-  // Team colors (final stage)
-  platform:{type:'Service', team:{name:'Platform', color:'#4F7FE8'}, sources:['GitHub','Kubernetes','Jira']},
-  core:    {type:'Service', team:{name:'Core',     color:'#10B981'}, sources:['GitHub','Kubernetes','Jira']},
-  catalog: {type:'Service', team:{name:'Catalog',  color:'#F97316'}, sources:['GitHub','Kubernetes']},
-  payments:{type:'Service', team:{name:'Payments', color:'#EC4899'}, sources:['GitHub','Vault']},
-  testing: {type:'Service', team:{name:'Testing',  color:'#8B5CF6'}, sources:['GitHub','Datadog']},
-  flows:   {type:'Service', team:{name:'Pipelines',color:'#06B6D4'}, sources:['GitHub','Kubernetes']},
-  data:    {type:'Service', team:{name:'Data',     color:'#F59E0B'}, sources:['GitHub','Datadog']},
+  // Team colors (final stage) — e-commerce teams
+  platform:{type:'Service', team:{name:'Platform',   color:'#4F7FE8'}, sources:['GitHub','Kubernetes','Jira']},
+  core:    {type:'Service', team:{name:'Checkout',   color:'#10B981'}, sources:['GitHub','Kubernetes','Jira']},
+  catalog: {type:'Service', team:{name:'Storefront', color:'#F97316'}, sources:['GitHub','Kubernetes']},
+  payments:{type:'Service', team:{name:'Payments',   color:'#EC4899'}, sources:['GitHub','Vault']},
+  testing: {type:'Service', team:{name:'Reviews',    color:'#8B5CF6'}, sources:['GitHub','Datadog']},
+  flows:   {type:'Service', team:{name:'Fulfillment',color:'#06B6D4'}, sources:['GitHub','Kubernetes']},
+  data:    {type:'Service', team:{name:'Analytics',  color:'#F59E0B'}, sources:['GitHub','Datadog']},
 };
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function hashCode(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return Math.abs(h)}
